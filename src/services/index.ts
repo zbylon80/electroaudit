@@ -12,3 +12,6 @@ export * from './room';
 
 // Point services
 export * from './point';
+
+// Result services
+export * from './result';
