@@ -15,3 +15,6 @@ export * from './point';
 
 // Result services
 export * from './result';
+
+// Visual Inspection services
+export * from './visualInspection';
