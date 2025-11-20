@@ -16,3 +16,6 @@ export const intToBool = (value: number): boolean => {
 
 // Export all validators
 export * from './validators';
+
+// Export seed data utility
+export { seedDatabase } from './seedData';
