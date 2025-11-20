@@ -2,6 +2,7 @@ import { StatusBar } from 'expo-status-bar';
 import { StyleSheet, Text, View, ActivityIndicator, Platform } from 'react-native';
 import { useEffect, useState } from 'react';
 import { initDatabase } from './src/services/database';
+import { RootNavigator } from './src/navigation';
 
 export default function App() {
   const [isReady, setIsReady] = useState(false);
@@ -49,35 +50,10 @@ export default function App() {
   }
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>⚡ ElectroAudit</Text>
-      <Text style={styles.subtitle}>Electrical Inspection Management</Text>
-      <View style={styles.statusContainer}>
-        {isWeb ? (
-          <>
-            <Text style={styles.warningText}>⚠️ Running on Web</Text>
-            <Text style={styles.statusText}>
-              Database features are disabled in web browser
-            </Text>
-            <Text style={styles.infoText}>
-              For full functionality, run on Android emulator or device
-            </Text>
-          </>
-        ) : (
-          <>
-            <Text style={styles.statusText}>✅ Database initialized</Text>
-            <Text style={styles.statusText}>✅ Client service ready</Text>
-          </>
-        )}
-        <Text style={styles.infoText}>
-          UI screens will be implemented in upcoming tasks
-        </Text>
-        <Text style={styles.platformText}>
-          Platform: {Platform.OS}
-        </Text>
-      </View>
+    <>
+      <RootNavigator />
       <StatusBar style="auto" />
-    </View>
+    </>
   );
 }
 

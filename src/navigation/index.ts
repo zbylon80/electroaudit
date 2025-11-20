@@ -1,2 +1,2 @@
-// Navigation configuration will be added here
-export {};
+export { RootNavigator } from './RootNavigator';
+export type { RootStackParamList } from './types';
