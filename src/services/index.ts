@@ -9,3 +9,6 @@ export * from './order';
 
 // Room services
 export * from './room';
+
+// Point services
+export * from './point';
