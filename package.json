@@ -20,7 +20,7 @@
     "expo-sqlite": "^16.0.9",
     "expo-status-bar": "~3.0.8",
     "react": "19.1.0",
-    "react-dom": "^19.2.0",
+    "react-dom": "^19.1.0",
     "react-hook-form": "^7.66.1",
     "react-native": "0.81.5",
     "react-native-paper": "^5.14.5",
