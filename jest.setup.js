@@ -15,15 +15,9 @@ global.__ExpoImportMetaRegistry = {
 
 global.structuredClone = global.structuredClone || ((obj) => JSON.parse(JSON.stringify(obj)));
 
-// Mock expo-sqlite
+// Mock expo-sqlite with async API
 jest.mock('expo-sqlite', () => ({
-  openDatabaseSync: jest.fn(() => ({
-    execSync: jest.fn(),
-    runSync: jest.fn(),
-    getFirstSync: jest.fn(),
-    getAllSync: jest.fn(),
-    closeSync: jest.fn(),
-  })),
+  openDatabaseAsync: jest.fn(),
 }));
 
 // Mock expo modules

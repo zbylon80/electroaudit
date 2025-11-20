@@ -1,2 +1,15 @@
-// Utility functions and validators will be added here
-export {};
+import { v4 as uuidv4 } from 'uuid';
+
+// UUID generation utility
+export const generateUUID = (): string => {
+  return uuidv4();
+};
+
+// Boolean conversion utilities for SQLite
+export const boolToInt = (value: boolean): number => {
+  return value ? 1 : 0;
+};
+
+export const intToBool = (value: number): boolean => {
+  return value === 1;
+};
