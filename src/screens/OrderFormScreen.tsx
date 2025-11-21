@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { View, StyleSheet, ScrollView, Alert, ActivityIndicator, Platform } from 'react-native';
+import { View, StyleSheet, ScrollView, ActivityIndicator, Platform } from 'react-native';
 import { useRoute, useNavigation, RouteProp, useFocusEffect } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { useForm, Controller } from 'react-hook-form';
@@ -16,6 +16,8 @@ import { getAllClients, getClient } from '../services/client';
 import { webGetAllClients, webGetClient, webGetOrder, webCreateOrder, webUpdateOrder, initWebStorage } from '../services/webStorage';
 import { validateRequired } from '../utils/validators';
 import { v4 as uuidv4 } from 'uuid';
+import { useNotification } from '../contexts/NotificationContext';
+import { getErrorMessage } from '../utils/errorHandler';
 
 type OrderFormScreenRouteProp = RouteProp<RootStackParamList, 'OrderFormScreen'>;
 type OrderFormScreenNavigationProp = StackNavigationProp<RootStackParamList, 'OrderFormScreen'>;
@@ -42,6 +44,7 @@ export const OrderFormScreen: React.FC = () => {
   const route = useRoute<OrderFormScreenRouteProp>();
   const navigation = useNavigation<OrderFormScreenNavigationProp>();
   const { orderId } = route.params || {};
+  const { showSuccess, showError } = useNotification();
   
   const [loading, setLoading] = useState(false);
   const [initialLoading, setInitialLoading] = useState(!!orderId);
@@ -95,7 +98,7 @@ export const OrderFormScreen: React.FC = () => {
           setClients(allClients);
         } catch (error) {
           console.error('Error loading clients:', error);
-          Alert.alert('Error', 'Failed to load clients');
+          showError('Nie udało się załadować klientów');
         } finally {
           setClientsLoading(false);
         }
@@ -138,12 +141,12 @@ export const OrderFormScreen: React.FC = () => {
           setValue('measureLps', order.measureLps);
           setValue('visualInspection', order.visualInspection);
         } else {
-          Alert.alert('Error', 'Order not found');
+          showError('Zlecenie nie zostało znalezione');
           navigation.goBack();
         }
       } catch (error) {
         console.error('Error loading order:', error);
-        Alert.alert('Error', 'Failed to load order data');
+        showError('Nie udało się załadować danych zlecenia');
         navigation.goBack();
       } finally {
         setInitialLoading(false);
@@ -254,14 +257,12 @@ export const OrderFormScreen: React.FC = () => {
         }
       }
 
-      // Navigate to OrderDetailsScreen on success
+      // Show success message and navigate to OrderDetailsScreen
+      showSuccess(orderId ? 'Zlecenie zaktualizowane pomyślnie' : 'Zlecenie utworzone pomyślnie');
       navigation.replace('OrderDetailsScreen', { orderId: createdOrderId });
     } catch (error) {
       console.error('Error saving order:', error);
-      Alert.alert(
-        'Error',
-        `Failed to ${orderId ? 'update' : 'create'} order. Please try again.`
-      );
+      showError(getErrorMessage(error));
     } finally {
       setLoading(false);
     }
@@ -274,7 +275,7 @@ export const OrderFormScreen: React.FC = () => {
     },
     (errors) => {
       console.log('Save as Draft - Form validation failed:', errors);
-      Alert.alert('Validation Error', 'Please fill in all required fields');
+      showError('Proszę wypełnić wszystkie wymagane pola');
     }
   );
   
@@ -285,7 +286,7 @@ export const OrderFormScreen: React.FC = () => {
     },
     (errors) => {
       console.log('Start Measurements - Form validation failed:', errors);
-      Alert.alert('Validation Error', 'Please fill in all required fields');
+      showError('Proszę wypełnić wszystkie wymagane pola');
     }
   );
 

@@ -5,6 +5,8 @@ import { useEffect, useState } from 'react';
 import { PaperProvider, MD3LightTheme } from 'react-native-paper';
 import { initDatabase } from './src/services/database';
 import { RootNavigator } from './src/navigation';
+import { ErrorBoundary } from './src/components/common';
+import { NotificationProvider } from './src/contexts/NotificationContext';
 
 // Import web styles for proper scrolling
 if (Platform.OS === 'web') {
@@ -76,10 +78,14 @@ export default function App() {
   }
 
   return (
-    <PaperProvider theme={theme}>
-      <RootNavigator />
-      <StatusBar style="auto" />
-    </PaperProvider>
+    <ErrorBoundary>
+      <PaperProvider theme={theme}>
+        <NotificationProvider>
+          <RootNavigator />
+          <StatusBar style="auto" />
+        </NotificationProvider>
+      </PaperProvider>
+    </ErrorBoundary>
   );
 }
 

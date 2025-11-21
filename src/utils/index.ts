@@ -20,3 +20,6 @@ export * from './validators';
 
 // Export seed data utility
 export { seedDatabase } from './seedData';
+
+// Export error handling utilities
+export * from './errorHandler';

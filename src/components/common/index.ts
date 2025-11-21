@@ -6,3 +6,4 @@ export { Switch } from './Switch';
 export { Picker } from './Picker';
 export type { PickerItem } from './Picker';
 export { DatePicker } from './DatePicker';
+export { ErrorBoundary } from './ErrorBoundary';

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, StyleSheet, ScrollView, Alert, ActivityIndicator, Platform } from 'react-native';
+import { View, StyleSheet, ScrollView, ActivityIndicator, Platform } from 'react-native';
 import { useRoute, useNavigation, RouteProp } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { useForm, Controller } from 'react-hook-form';
@@ -11,6 +11,8 @@ import { createClient, updateClient, getClient } from '../services/client';
 import { webGetClient, webCreateClient, webUpdateClient, initWebStorage } from '../services/webStorage';
 import { validateRequired, validateEmail } from '../utils/validators';
 import { v4 as uuidv4 } from 'uuid';
+import { useNotification } from '../contexts/NotificationContext';
+import { getErrorMessage } from '../utils/errorHandler';
 
 type ClientFormScreenRouteProp = RouteProp<RootStackParamList, 'ClientFormScreen'>;
 type ClientFormScreenNavigationProp = StackNavigationProp<RootStackParamList, 'ClientFormScreen'>;
@@ -28,6 +30,7 @@ export const ClientFormScreen: React.FC = () => {
   const route = useRoute<ClientFormScreenRouteProp>();
   const navigation = useNavigation<ClientFormScreenNavigationProp>();
   const { clientId } = route.params || {};
+  const { showSuccess, showError } = useNotification();
   
   const [loading, setLoading] = useState(false);
   const [initialLoading, setInitialLoading] = useState(!!clientId);
@@ -73,12 +76,12 @@ export const ClientFormScreen: React.FC = () => {
           setValue('email', client.email || '');
           setValue('notes', client.notes || '');
         } else {
-          Alert.alert('Error', 'Client not found');
+          showError('Klient nie został znaleziony');
           navigation.goBack();
         }
       } catch (error) {
         console.error('Error loading client:', error);
-        Alert.alert('Error', 'Failed to load client data');
+        showError('Nie udało się załadować danych klienta');
         navigation.goBack();
       } finally {
         setInitialLoading(false);
@@ -131,14 +134,12 @@ export const ClientFormScreen: React.FC = () => {
         }
       }
 
-      // Navigate back on success
+      // Show success message and navigate back
+      showSuccess(clientId ? 'Klient zaktualizowany pomyślnie' : 'Klient utworzony pomyślnie');
       navigation.goBack();
     } catch (error) {
       console.error('Error saving client:', error);
-      Alert.alert(
-        'Error',
-        `Failed to ${clientId ? 'update' : 'create'} client. Please try again.`
-      );
+      showError(getErrorMessage(error));
     } finally {
       setLoading(false);
     }
