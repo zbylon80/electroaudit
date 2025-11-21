@@ -44,6 +44,37 @@ export const createRoom = async (roomData: RoomInput): Promise<Room> => {
 };
 
 /**
+ * Get a single room by ID
+ * @param id - Room ID
+ * @returns Room or null if not found
+ */
+export const getRoom = async (id: string): Promise<Room | null> => {
+  try {
+    const results = await querySql(
+      'SELECT * FROM rooms WHERE id = ?',
+      [id]
+    );
+    
+    if (results.length === 0) {
+      return null;
+    }
+    
+    const row = results[0];
+    return {
+      id: row.id,
+      inspectionOrderId: row.inspectionOrderId,
+      name: row.name,
+      notes: row.notes ?? undefined,
+      createdAt: row.createdAt,
+      updatedAt: row.updatedAt,
+    };
+  } catch (error) {
+    console.error('Error getting room:', error);
+    throw new Error(`Failed to get room: ${error instanceof Error ? error.message : 'Unknown error'}`);
+  }
+};
+
+/**
  * Get all rooms for a specific inspection order
  * @param orderId - Inspection order ID
  * @returns Array of rooms for the order
@@ -51,7 +82,7 @@ export const createRoom = async (roomData: RoomInput): Promise<Room> => {
 export const getRoomsByOrder = async (orderId: string): Promise<Room[]> => {
   try {
     const results = await querySql(
-      'SELECT * FROM rooms WHERE inspectionOrderId = ? ORDER BY name ASC',
+      'SELECT * FROM rooms WHERE inspectionOrderId = ? ORDER BY createdAt ASC',
       [orderId]
     );
     

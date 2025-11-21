@@ -1,6 +1,6 @@
-import React, { useState, useEffect, createContext, useContext } from 'react';
+import React, { useState, useEffect, createContext, useContext, useCallback } from 'react';
 import { View, Text, StyleSheet, ActivityIndicator, Platform, Alert, ScrollView, FlatList } from 'react-native';
-import { useRoute, RouteProp, useNavigation } from '@react-navigation/native';
+import { useRoute, RouteProp, useNavigation, useFocusEffect } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { createMaterialTopTabNavigator } from '@react-navigation/material-top-tabs';
 import { IconButton, FAB, Dialog, Portal, Paragraph } from 'react-native-paper';
@@ -67,9 +67,12 @@ const RoomsTab: React.FC = () => {
     }
   };
 
-  useEffect(() => {
-    loadRooms();
-  }, [order.id]);
+  // Use useFocusEffect to reload rooms when returning from RoomFormScreen
+  useFocusEffect(
+    useCallback(() => {
+      loadRooms();
+    }, [order.id])
+  );
 
   const handleQuickAdd = async (roomName: string) => {
     try {

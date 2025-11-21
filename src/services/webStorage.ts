@@ -123,9 +123,16 @@ export const initWebStorage = (): void => {
 };
 
 // Room operations
+export const webGetRoom = (id: string): Room | null => {
+  const rooms = getFromStorage<Room>(STORAGE_KEYS.ROOMS);
+  return rooms.find(r => r.id === id) || null;
+};
+
 export const webGetRoomsByOrder = (orderId: string): Room[] => {
   const rooms = getFromStorage<Room>(STORAGE_KEYS.ROOMS);
-  return rooms.filter(r => r.inspectionOrderId === orderId).sort((a, b) => a.name.localeCompare(b.name));
+  return rooms
+    .filter(r => r.inspectionOrderId === orderId)
+    .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
 };
 
 export const webCreateRoom = (room: Room): void => {
