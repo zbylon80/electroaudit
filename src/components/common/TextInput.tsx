@@ -15,6 +15,7 @@ interface TextInputProps {
   secureTextEntry?: boolean;
   style?: ViewStyle;
   mode?: 'flat' | 'outlined';
+  maxLength?: number;
 }
 
 export const TextInput: React.FC<TextInputProps> = ({
@@ -30,6 +31,7 @@ export const TextInput: React.FC<TextInputProps> = ({
   secureTextEntry = false,
   style,
   mode = 'outlined',
+  maxLength,
 }) => {
   return (
     <PaperTextInput
@@ -45,6 +47,7 @@ export const TextInput: React.FC<TextInputProps> = ({
       secureTextEntry={secureTextEntry}
       mode={mode}
       style={[styles.input, style]}
+      maxLength={maxLength}
     />
   );
 };

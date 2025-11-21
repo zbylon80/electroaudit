@@ -52,6 +52,29 @@ export const createPoint = async (pointData: PointInput): Promise<MeasurementPoi
 };
 
 /**
+ * Get a single measurement point by ID
+ * @param id - Point ID
+ * @returns Measurement point or null if not found
+ */
+export const getPoint = async (id: string): Promise<MeasurementPoint | null> => {
+  try {
+    const results = await querySql(
+      'SELECT * FROM measurement_points WHERE id = ?',
+      [id]
+    );
+    
+    if (results.length === 0) {
+      return null;
+    }
+    
+    return rowToPoint(results[0]);
+  } catch (error) {
+    console.error('Error getting measurement point:', error);
+    throw new Error(`Failed to get measurement point: ${error instanceof Error ? error.message : 'Unknown error'}`);
+  }
+};
+
+/**
  * Get all measurement points for a specific inspection order
  * @param orderId - Inspection order ID
  * @returns Array of measurement points for the order

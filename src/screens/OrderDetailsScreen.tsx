@@ -1,5 +1,5 @@
 import React, { useState, useEffect, createContext, useContext, useCallback } from 'react';
-import { View, Text, StyleSheet, ActivityIndicator, Platform, Alert, ScrollView, FlatList } from 'react-native';
+import { View, Text, StyleSheet, ActivityIndicator, Platform, Alert, ScrollView, FlatList, TouchableOpacity } from 'react-native';
 import { useRoute, RouteProp, useNavigation, useFocusEffect } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { createMaterialTopTabNavigator } from '@react-navigation/material-top-tabs';
@@ -9,9 +9,9 @@ import { InspectionOrder, Client, Room, MeasurementPoint, PointType, PointStatus
 import { getOrder, deleteOrder } from '../services/order';
 import { getClient } from '../services/client';
 import { getRoomsByOrder, deleteRoom, createRoom } from '../services/room';
-import { getPointsByOrder, getPointStatus } from '../services/point';
+import { getPointsByOrder, getPointStatus, deletePoint } from '../services/point';
 import { generateUUID } from '../utils';
-import { webGetOrder, webGetClient, webDeleteOrder, webGetRoomsByOrder, webDeleteRoom, webCreateRoom, webGetPointsByOrder, webGetPointStatus, initWebStorage } from '../services/webStorage';
+import { webGetOrder, webGetClient, webDeleteOrder, webGetRoomsByOrder, webDeleteRoom, webCreateRoom, webGetPointsByOrder, webGetPointStatus, webDeletePoint, initWebStorage } from '../services/webStorage';
 import { EmptyState } from '../components/lists/EmptyState';
 import { Button } from '../components/common/Button';
 import { Picker, PickerItem } from '../components/common/Picker';
@@ -280,6 +280,8 @@ const PointsTab: React.FC = () => {
   const [selectedRoomId, setSelectedRoomId] = useState<string>('all');
   const [loading, setLoading] = useState(true);
   const [pointStatuses, setPointStatuses] = useState<Record<string, PointStatus>>({});
+  const [deleteDialogVisible, setDeleteDialogVisible] = useState(false);
+  const [pointToDelete, setPointToDelete] = useState<{ id: string; label: string } | null>(null);
   const isWeb = Platform.OS === 'web';
 
   const loadData = async () => {
@@ -325,11 +327,53 @@ const PointsTab: React.FC = () => {
   );
 
   const handleAddPoint = () => {
-    navigation.navigate('PointFormScreen', { orderId: order.id });
+    // Pass roomId if a specific room is selected (not 'all' or 'unassigned')
+    const roomIdToPass = selectedRoomId !== 'all' && selectedRoomId !== 'unassigned' ? selectedRoomId : undefined;
+    navigation.navigate('PointFormScreen', { orderId: order.id, roomId: roomIdToPass });
   };
 
   const handlePointPress = (pointId: string) => {
     navigation.navigate('MeasurementFormScreen', { orderId: order.id, pointId });
+  };
+
+  const handleEditPoint = (pointId: string) => {
+    navigation.navigate('PointFormScreen', { orderId: order.id, pointId });
+  };
+
+  const handleDeletePoint = (pointId: string, pointLabel: string) => {
+    setPointToDelete({ id: pointId, label: pointLabel });
+    setDeleteDialogVisible(true);
+  };
+
+  const confirmDeletePoint = async () => {
+    if (!pointToDelete) return;
+
+    try {
+      if (isWeb) {
+        initWebStorage();
+        webDeletePoint(pointToDelete.id);
+      } else {
+        await deletePoint(pointToDelete.id);
+      }
+      await loadData();
+      setDeleteDialogVisible(false);
+      setPointToDelete(null);
+    } catch (error) {
+      console.error('Error deleting point:', error);
+      setDeleteDialogVisible(false);
+      setPointToDelete(null);
+      
+      if (isWeb) {
+        window.alert('Failed to delete measurement point');
+      } else {
+        Alert.alert('Error', 'Failed to delete measurement point');
+      }
+    }
+  };
+
+  const cancelDeletePoint = () => {
+    setDeleteDialogVisible(false);
+    setPointToDelete(null);
   };
 
   const getStatusColor = (status: PointStatus): string => {
@@ -411,15 +455,23 @@ const PointsTab: React.FC = () => {
     const room = item.roomId ? rooms.find(r => r.id === item.roomId) : null;
     
     return (
-      <View style={styles.pointItem} onTouchEnd={() => handlePointPress(item.id)}>
-        <View style={styles.pointIconContainer}>
+      <View style={styles.pointItem}>
+        <TouchableOpacity 
+          style={styles.pointIconContainer} 
+          onPress={() => handlePointPress(item.id)}
+          activeOpacity={0.7}
+        >
           <IconButton
             icon={getTypeIcon(item.type)}
             size={24}
             iconColor="#2196F3"
           />
-        </View>
-        <View style={styles.pointInfo}>
+        </TouchableOpacity>
+        <TouchableOpacity 
+          style={styles.pointInfo} 
+          onPress={() => handlePointPress(item.id)}
+          activeOpacity={0.7}
+        >
           <Text style={styles.pointLabel}>{item.label}</Text>
           <View style={styles.pointDetails}>
             <Text style={styles.pointType}>{getTypeLabel(item.type)}</Text>
@@ -442,9 +494,29 @@ const PointsTab: React.FC = () => {
               </>
             )}
           </View>
-        </View>
-        <View style={[styles.statusIndicator, { backgroundColor: getStatusColor(status) }]}>
+          {item.notes && (
+            <Text style={styles.pointNotes}>{item.notes}</Text>
+          )}
+        </TouchableOpacity>
+        <TouchableOpacity 
+          style={[styles.statusIndicator, { backgroundColor: getStatusColor(status) }]} 
+          onPress={() => handlePointPress(item.id)}
+          activeOpacity={0.7}
+        >
           <Text style={styles.pointStatusText}>{getStatusLabel(status)}</Text>
+        </TouchableOpacity>
+        <View style={styles.pointActions}>
+          <IconButton
+            icon="pencil"
+            size={20}
+            onPress={() => handleEditPoint(item.id)}
+          />
+          <IconButton
+            icon="delete"
+            iconColor="#d32f2f"
+            size={20}
+            onPress={() => handleDeletePoint(item.id, item.label)}
+          />
         </View>
       </View>
     );
@@ -513,6 +585,26 @@ const PointsTab: React.FC = () => {
           onPress={handleAddPoint}
         />
       )}
+
+      {/* Delete confirmation dialog */}
+      <Portal>
+        <Dialog visible={deleteDialogVisible} onDismiss={cancelDeletePoint}>
+          <Dialog.Title>Delete Measurement Point</Dialog.Title>
+          <Dialog.Content>
+            <Paragraph>
+              Are you sure you want to delete "{pointToDelete?.label}"? This will also delete any associated measurement results.
+            </Paragraph>
+          </Dialog.Content>
+          <Dialog.Actions>
+            <Button mode="text" onPress={cancelDeletePoint}>
+              Cancel
+            </Button>
+            <Button mode="text" onPress={confirmDeletePoint}>
+              Delete
+            </Button>
+          </Dialog.Actions>
+        </Dialog>
+      </Portal>
     </View>
   );
 };
@@ -937,6 +1029,10 @@ const styles = StyleSheet.create({
     borderBottomColor: '#e0e0e0',
     backgroundColor: '#fff',
   },
+  pointActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
   pointIconContainer: {
     marginRight: 8,
   },
@@ -975,6 +1071,12 @@ const styles = StyleSheet.create({
   pointRoomUnassigned: {
     fontSize: 14,
     color: '#999',
+    fontStyle: 'italic',
+  },
+  pointNotes: {
+    fontSize: 13,
+    color: '#666',
+    marginTop: 4,
     fontStyle: 'italic',
   },
   statusIndicator: {

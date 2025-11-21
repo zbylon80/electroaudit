@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, StyleSheet, ViewStyle, Platform } from 'react-native';
+import { View, StyleSheet, ViewStyle, Platform, TouchableOpacity } from 'react-native';
 import { Menu, Button, Text } from 'react-native-paper';
 
 export interface PickerItem {
@@ -28,8 +28,24 @@ export const Picker: React.FC<PickerProps> = ({
 }) => {
   const [visible, setVisible] = useState(false);
 
-  const openMenu = () => setVisible(true);
-  const closeMenu = () => setVisible(false);
+  const openMenu = () => {
+    if (!disabled) {
+      setVisible(true);
+    }
+  };
+  
+  const closeMenu = () => {
+    setVisible(false);
+  };
+
+  const handleItemPress = (itemValue: string) => {
+    // Close menu first
+    setVisible(false);
+    // Then update value after a small delay to ensure menu is fully closed
+    setTimeout(() => {
+      onValueChange(itemValue);
+    }, 100);
+  };
 
   const selectedItem = items.find((item) => item.value === value);
   const displayValue = selectedItem ? selectedItem.label : placeholder;
@@ -40,25 +56,21 @@ export const Picker: React.FC<PickerProps> = ({
       <Menu
         visible={visible}
         onDismiss={closeMenu}
+        contentStyle={styles.menuContent}
         anchor={
-          <Button
-            mode="outlined"
-            onPress={openMenu}
-            disabled={disabled}
-            style={styles.button}
-            contentStyle={styles.buttonContent}
-          >
-            {displayValue}
-          </Button>
+          <TouchableOpacity onPress={openMenu} disabled={disabled}>
+            <View style={[styles.button, disabled && styles.buttonDisabled]}>
+              <Text style={[styles.buttonText, disabled && styles.buttonTextDisabled]}>
+                {displayValue}
+              </Text>
+            </View>
+          </TouchableOpacity>
         }
       >
         {items.map((item) => (
           <Menu.Item
             key={item.value}
-            onPress={() => {
-              onValueChange(item.value);
-              closeMenu();
-            }}
+            onPress={() => handleItemPress(item.value)}
             title={item.label}
           />
         ))}
@@ -77,9 +89,26 @@ const styles = StyleSheet.create({
     opacity: 0.6,
   },
   button: {
-    justifyContent: 'flex-start',
+    borderWidth: 1,
+    borderColor: '#666',
+    borderRadius: 4,
+    padding: 12,
+    backgroundColor: '#fff',
+    minHeight: 48,
+    justifyContent: 'center',
   },
-  buttonContent: {
-    justifyContent: 'flex-start',
+  buttonDisabled: {
+    backgroundColor: '#f5f5f5',
+    borderColor: '#ccc',
+  },
+  buttonText: {
+    fontSize: 16,
+    color: '#333',
+  },
+  buttonTextDisabled: {
+    color: '#999',
+  },
+  menuContent: {
+    maxHeight: 300,
   },
 });

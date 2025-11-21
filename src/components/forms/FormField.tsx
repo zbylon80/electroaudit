@@ -16,6 +16,7 @@ interface FormFieldProps {
   secureTextEntry?: boolean;
   style?: ViewStyle;
   required?: boolean;
+  maxLength?: number;
 }
 
 export const FormField: React.FC<FormFieldProps> = ({
@@ -31,6 +32,7 @@ export const FormField: React.FC<FormFieldProps> = ({
   secureTextEntry = false,
   style,
   required = false,
+  maxLength,
 }) => {
   const displayLabel = required ? `${label} *` : label;
 
@@ -47,6 +49,7 @@ export const FormField: React.FC<FormFieldProps> = ({
         numberOfLines={numberOfLines}
         keyboardType={keyboardType}
         secureTextEntry={secureTextEntry}
+        maxLength={maxLength}
       />
       {error && (
         <HelperText type="error" visible={!!error}>

@@ -7,7 +7,7 @@ export type RootStackParamList = {
   ClientFormScreen: { clientId?: string };
   OrderDetailsScreen: { orderId: string };
   RoomFormScreen: { orderId: string; roomId?: string };
-  PointFormScreen: { orderId: string; pointId?: string };
+  PointFormScreen: { orderId: string; pointId?: string; roomId?: string };
   MeasurementFormScreen: { orderId: string; pointId: string };
 };
 

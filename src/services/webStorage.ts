@@ -164,6 +164,11 @@ export const webDeleteRoom = (id: string): void => {
 };
 
 // Point operations
+export const webGetPoint = (id: string): MeasurementPoint | null => {
+  const points = getFromStorage<MeasurementPoint>(STORAGE_KEYS.POINTS);
+  return points.find(p => p.id === id) || null;
+};
+
 export const webGetPointsByOrder = (orderId: string): MeasurementPoint[] => {
   const points = getFromStorage<MeasurementPoint>(STORAGE_KEYS.POINTS);
   return points
@@ -182,6 +187,26 @@ export const webCreatePoint = (point: MeasurementPoint): void => {
   const points = getFromStorage<MeasurementPoint>(STORAGE_KEYS.POINTS);
   points.push(point);
   saveToStorage(STORAGE_KEYS.POINTS, points);
+};
+
+export const webUpdatePoint = (id: string, updatedPoint: Partial<MeasurementPoint>): void => {
+  const points = getFromStorage<MeasurementPoint>(STORAGE_KEYS.POINTS);
+  const index = points.findIndex(p => p.id === id);
+  if (index !== -1) {
+    points[index] = { ...points[index], ...updatedPoint };
+    saveToStorage(STORAGE_KEYS.POINTS, points);
+  }
+};
+
+export const webDeletePoint = (id: string): void => {
+  const points = getFromStorage<MeasurementPoint>(STORAGE_KEYS.POINTS);
+  const filtered = points.filter(p => p.id !== id);
+  saveToStorage(STORAGE_KEYS.POINTS, filtered);
+  
+  // Also delete associated measurement result
+  const results = getFromStorage<any>(STORAGE_KEYS.RESULTS);
+  const filteredResults = results.filter(r => r.measurementPointId !== id);
+  saveToStorage(STORAGE_KEYS.RESULTS, filteredResults);
 };
 
 export const webGetPointStatus = (pointId: string): PointStatus => {
