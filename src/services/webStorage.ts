@@ -301,3 +301,132 @@ export const clearWebStorage = (): void => {
   });
   initWebStorage();
 };
+
+// Protocol operations
+export const webGenerateProtocolData = (orderId: string): any => {
+  // Import types
+  const { PointStatus } = require('../types');
+  
+  // Load order details
+  const order = webGetOrder(orderId);
+  if (!order) {
+    throw new Error('Order not found');
+  }
+  
+  // Load client information
+  const client = webGetClient(order.clientId);
+  if (!client) {
+    throw new Error('Client not found');
+  }
+  
+  // Load all rooms for the order
+  const rooms = webGetRoomsByOrder(orderId);
+  
+  // Load all measurement points with their results
+  const points = webGetPointsByOrder(orderId);
+  
+  // Load results and status for each point
+  const pointsWithResults = points.map((point) => {
+    const result = webGetResultByPoint(point.id);
+    const status = webGetPointStatus(point.id);
+    const room = point.roomId ? rooms.find(r => r.id === point.roomId) : undefined;
+    
+    return {
+      point,
+      result,
+      status,
+      roomName: room?.name,
+    };
+  });
+  
+  // Load visual inspection if applicable
+  let visualInspection = undefined;
+  if (order.visualInspection) {
+    const vi = webGetVisualInspectionByOrder(orderId);
+    if (vi) {
+      visualInspection = vi;
+    }
+  }
+  
+  // Organize results by room
+  const resultsByRoom = [];
+  
+  // Group points by room
+  const roomMap = new Map();
+  const unassignedPoints = [];
+  const lpsPoints = [];
+  
+  for (const pwr of pointsWithResults) {
+    // Separate LPS points
+    if (pwr.point.type === 'lps') {
+      lpsPoints.push(pwr);
+      continue;
+    }
+    
+    // Group by room or unassigned
+    if (pwr.point.roomId) {
+      const existing = roomMap.get(pwr.point.roomId) || [];
+      existing.push(pwr);
+      roomMap.set(pwr.point.roomId, existing);
+    } else {
+      unassignedPoints.push(pwr);
+    }
+  }
+  
+  // Build resultsByRoom array
+  for (const room of rooms) {
+    const roomPoints = roomMap.get(room.id) || [];
+    if (roomPoints.length > 0) {
+      resultsByRoom.push({
+        roomName: room.name,
+        roomId: room.id,
+        points: roomPoints,
+      });
+    }
+  }
+  
+  // Add unassigned points if any
+  if (unassignedPoints.length > 0) {
+    resultsByRoom.push({
+      roomName: 'Unassigned',
+      points: unassignedPoints,
+    });
+  }
+  
+  // Build protocol data
+  const protocolData = {
+    inspector: {
+      name: 'Inspector Name', // TODO: Make this configurable
+      licenseNumber: undefined,
+      company: undefined,
+    },
+    client,
+    object: {
+      name: order.objectName,
+      address: order.address,
+      scheduledDate: order.scheduledDate,
+    },
+    scope: {
+      loopImpedance: order.measureLoopImpedance,
+      insulation: order.measureInsulation,
+      rcd: order.measureRcd,
+      peContinuity: order.measurePeContinuity,
+      earthing: order.measureEarthing,
+      polarity: order.measurePolarity,
+      phaseSequence: order.measurePhaseSequence,
+      breakersCheck: order.measureBreakersCheck,
+      lps: order.measureLps,
+      visualInspection: order.visualInspection,
+    },
+    resultsByRoom,
+    lpsSection: lpsPoints.length > 0 ? { points: lpsPoints } : undefined,
+    visualInspection,
+    signature: {
+      date: undefined,
+      inspectorSignature: undefined,
+    },
+    order,
+  };
+  
+  return protocolData;
+};

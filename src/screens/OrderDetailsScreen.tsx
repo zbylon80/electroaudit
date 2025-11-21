@@ -799,11 +799,183 @@ const VisualTab: React.FC = () => {
 
 const ProtocolTab: React.FC = () => {
   const { order } = useOrderContext();
+  const [loading, setLoading] = useState(true);
+  const [protocolData, setProtocolData] = useState<any>(null);
+  const [error, setError] = useState<string | null>(null);
+  const isWeb = Platform.OS === 'web';
+
+  const loadProtocolData = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      let data = null;
+      
+      if (isWeb) {
+        initWebStorage();
+        const { webGenerateProtocolData } = require('../services/webStorage');
+        data = webGenerateProtocolData(order.id);
+      } else {
+        const { generateProtocolData } = require('../services/protocol');
+        data = await generateProtocolData(order.id);
+      }
+      
+      setProtocolData(data);
+    } catch (err) {
+      console.error('Error loading protocol data:', err);
+      setError('Failed to load protocol data');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useFocusEffect(
+    useCallback(() => {
+      loadProtocolData();
+    }, [order.id])
+  );
+
+  if (loading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#2196F3" />
+      </View>
+    );
+  }
+
+  if (error || !protocolData) {
+    return (
+      <View style={styles.errorContainer}>
+        <Text style={styles.errorText}>{error || 'Failed to load protocol data'}</Text>
+      </View>
+    );
+  }
+
   return (
     <View style={styles.tabContainer}>
-      <Text style={styles.tabText}>Protocol Tab</Text>
-      <Text style={styles.tabSubtext}>Order ID: {order.id}</Text>
-      <Text style={styles.tabSubtext}>This will be implemented in tasks 23-25</Text>
+      <ScrollView style={styles.scrollView}>
+        <View style={styles.protocolContainer}>
+          <Text style={styles.protocolTitle}>Inspection Protocol</Text>
+          
+          {/* Inspector Info */}
+          <View style={styles.protocolSection}>
+            <Text style={styles.sectionTitle}>Inspector Information</Text>
+            <Text style={styles.protocolText}>Name: {protocolData.inspector.name}</Text>
+            {protocolData.inspector.licenseNumber && (
+              <Text style={styles.protocolText}>License: {protocolData.inspector.licenseNumber}</Text>
+            )}
+            {protocolData.inspector.company && (
+              <Text style={styles.protocolText}>Company: {protocolData.inspector.company}</Text>
+            )}
+          </View>
+
+          {/* Client Info */}
+          <View style={styles.protocolSection}>
+            <Text style={styles.sectionTitle}>Client Information</Text>
+            <Text style={styles.protocolText}>Name: {protocolData.client.name}</Text>
+            <Text style={styles.protocolText}>Address: {protocolData.client.address}</Text>
+            {protocolData.client.contactPerson && (
+              <Text style={styles.protocolText}>Contact: {protocolData.client.contactPerson}</Text>
+            )}
+            {protocolData.client.phone && (
+              <Text style={styles.protocolText}>Phone: {protocolData.client.phone}</Text>
+            )}
+          </View>
+
+          {/* Object Info */}
+          <View style={styles.protocolSection}>
+            <Text style={styles.sectionTitle}>Object Information</Text>
+            <Text style={styles.protocolText}>Name: {protocolData.object.name}</Text>
+            <Text style={styles.protocolText}>Address: {protocolData.object.address}</Text>
+            {protocolData.object.scheduledDate && (
+              <Text style={styles.protocolText}>
+                Date: {new Date(protocolData.object.scheduledDate).toLocaleDateString()}
+              </Text>
+            )}
+          </View>
+
+          {/* Measurement Scope */}
+          <View style={styles.protocolSection}>
+            <Text style={styles.sectionTitle}>Measurement Scope</Text>
+            {protocolData.scope.loopImpedance && <Text style={styles.protocolText}>✓ Loop Impedance</Text>}
+            {protocolData.scope.insulation && <Text style={styles.protocolText}>✓ Insulation Resistance</Text>}
+            {protocolData.scope.rcd && <Text style={styles.protocolText}>✓ RCD Testing</Text>}
+            {protocolData.scope.peContinuity && <Text style={styles.protocolText}>✓ PE Continuity</Text>}
+            {protocolData.scope.earthing && <Text style={styles.protocolText}>✓ Earthing</Text>}
+            {protocolData.scope.polarity && <Text style={styles.protocolText}>✓ Polarity</Text>}
+            {protocolData.scope.phaseSequence && <Text style={styles.protocolText}>✓ Phase Sequence</Text>}
+            {protocolData.scope.breakersCheck && <Text style={styles.protocolText}>✓ Breakers Check</Text>}
+            {protocolData.scope.lps && <Text style={styles.protocolText}>✓ LPS</Text>}
+            {protocolData.scope.visualInspection && <Text style={styles.protocolText}>✓ Visual Inspection</Text>}
+          </View>
+
+          {/* Results by Room */}
+          <View style={styles.protocolSection}>
+            <Text style={styles.sectionTitle}>Measurement Results</Text>
+            {protocolData.resultsByRoom.map((roomSection: any, index: number) => (
+              <View key={index} style={styles.roomSection}>
+                <Text style={styles.roomSectionTitle}>{roomSection.roomName}</Text>
+                {roomSection.points.map((pwr: any) => (
+                  <View key={pwr.point.id} style={styles.pointResultRow}>
+                    <Text style={styles.pointResultLabel}>{pwr.point.label}</Text>
+                    <Text style={[
+                      styles.pointResultStatus,
+                      { color: pwr.status === 'ok' ? '#66BB6A' : pwr.status === 'not_ok' ? '#EF5350' : '#999' }
+                    ]}>
+                      {pwr.status === 'ok' ? 'OK' : pwr.status === 'not_ok' ? 'NOT OK' : 'Unmeasured'}
+                    </Text>
+                  </View>
+                ))}
+              </View>
+            ))}
+          </View>
+
+          {/* LPS Section */}
+          {protocolData.lpsSection && (
+            <View style={styles.protocolSection}>
+              <Text style={styles.sectionTitle}>Lightning Protection System (LPS)</Text>
+              {protocolData.lpsSection.points.map((pwr: any) => (
+                <View key={pwr.point.id} style={styles.pointResultRow}>
+                  <Text style={styles.pointResultLabel}>{pwr.point.label}</Text>
+                  <Text style={[
+                    styles.pointResultStatus,
+                    { color: pwr.status === 'ok' ? '#66BB6A' : pwr.status === 'not_ok' ? '#EF5350' : '#999' }
+                  ]}>
+                    {pwr.status === 'ok' ? 'OK' : pwr.status === 'not_ok' ? 'NOT OK' : 'Unmeasured'}
+                  </Text>
+                </View>
+              ))}
+            </View>
+          )}
+
+          {/* Visual Inspection */}
+          {protocolData.visualInspection && (
+            <View style={styles.protocolSection}>
+              <Text style={styles.sectionTitle}>Visual Inspection</Text>
+              <Text style={styles.protocolText}>Summary: {protocolData.visualInspection.summary}</Text>
+              {protocolData.visualInspection.defectsFound && (
+                <Text style={styles.protocolText}>Defects: {protocolData.visualInspection.defectsFound}</Text>
+              )}
+              {protocolData.visualInspection.recommendations && (
+                <Text style={styles.protocolText}>Recommendations: {protocolData.visualInspection.recommendations}</Text>
+              )}
+              <Text style={[
+                styles.protocolText,
+                { color: protocolData.visualInspection.visualResultPass ? '#66BB6A' : '#EF5350' }
+              ]}>
+                Result: {protocolData.visualInspection.visualResultPass ? 'PASS' : 'FAIL'}
+              </Text>
+            </View>
+          )}
+
+          {/* Signature */}
+          <View style={styles.protocolSection}>
+            <Text style={styles.sectionTitle}>Signature</Text>
+            <Text style={styles.protocolText}>Date: _________________</Text>
+            <Text style={styles.protocolText}>Inspector Signature: _________________</Text>
+          </View>
+        </View>
+      </ScrollView>
     </View>
   );
 };
@@ -1326,5 +1498,63 @@ const styles = StyleSheet.create({
   saveButton: {
     marginTop: 24,
     marginBottom: 32,
+  },
+  protocolContainer: {
+    padding: 16,
+  },
+  protocolTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#333',
+    marginBottom: 24,
+    textAlign: 'center',
+  },
+  protocolSection: {
+    marginBottom: 24,
+    padding: 16,
+    backgroundColor: '#f5f5f5',
+    borderRadius: 8,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#2196F3',
+    marginBottom: 12,
+  },
+  protocolText: {
+    fontSize: 14,
+    color: '#333',
+    marginBottom: 6,
+    lineHeight: 20,
+  },
+  roomSection: {
+    marginTop: 12,
+    marginBottom: 12,
+  },
+  roomSectionTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#666',
+    marginBottom: 8,
+  },
+  pointResultRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 6,
+    paddingHorizontal: 8,
+    backgroundColor: '#fff',
+    borderRadius: 4,
+    marginBottom: 4,
+  },
+  pointResultLabel: {
+    fontSize: 14,
+    color: '#333',
+    flex: 1,
+  },
+  pointResultStatus: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    marginLeft: 8,
   },
 });

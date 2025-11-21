@@ -18,3 +18,6 @@ export * from './result';
 
 // Visual Inspection services
 export * from './visualInspection';
+
+// Protocol services
+export * from './protocol';
