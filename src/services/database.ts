@@ -61,9 +61,9 @@ const checkSchemaMigration = async (): Promise<boolean> => {
     
     return false;
   } catch (error) {
-    console.error('Error checking schema migration:', error);
-    // If we can't check, assume migration is needed to be safe
-    return true;
+    // Fail safe: never trigger destructive migrations if schema check fails
+    console.warn('Error checking schema migration, skipping migration to preserve data:', error);
+    return false;
   }
 };
 

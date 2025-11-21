@@ -97,6 +97,27 @@ export const webDeleteOrder = (id: string): void => {
   const orders = getFromStorage<InspectionOrder>(STORAGE_KEYS.ORDERS);
   const filtered = orders.filter(o => o.id !== id);
   saveToStorage(STORAGE_KEYS.ORDERS, filtered);
+
+  // Cascade delete related rooms, points, results and visual inspections to mirror SQLite FK behavior
+  const rooms = getFromStorage<Room>(STORAGE_KEYS.ROOMS);
+  const remainingRooms = rooms.filter(r => r.inspectionOrderId !== id);
+  const removedRoomIds = new Set(rooms.filter(r => r.inspectionOrderId === id).map(r => r.id));
+  saveToStorage(STORAGE_KEYS.ROOMS, remainingRooms);
+
+  const points = getFromStorage<MeasurementPoint>(STORAGE_KEYS.POINTS);
+  const remainingPoints = points.filter(p => p.inspectionOrderId !== id);
+  const removedPointIds = new Set(points.filter(p => p.inspectionOrderId === id).map(p => p.id));
+  saveToStorage(STORAGE_KEYS.POINTS, remainingPoints);
+
+  // Drop results for points that were removed
+  const results = getFromStorage<MeasurementResult>(STORAGE_KEYS.RESULTS);
+  const remainingResults = results.filter(r => !removedPointIds.has(r.measurementPointId));
+  saveToStorage(STORAGE_KEYS.RESULTS, remainingResults);
+
+  // Drop visual inspection for the order if present
+  const visualInspections = getFromStorage<any>(STORAGE_KEYS.VISUAL_INSPECTIONS);
+  const remainingVisualInspections = visualInspections.filter((vi: any) => vi.inspectionOrderId !== id);
+  saveToStorage(STORAGE_KEYS.VISUAL_INSPECTIONS, remainingVisualInspections);
 };
 
 // Initialize web storage with empty arrays
