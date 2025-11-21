@@ -1,8 +1,25 @@
+import 'react-native-get-random-values';
 import { StatusBar } from 'expo-status-bar';
 import { StyleSheet, Text, View, ActivityIndicator, Platform } from 'react-native';
 import { useEffect, useState } from 'react';
+import { PaperProvider, MD3LightTheme } from 'react-native-paper';
 import { initDatabase } from './src/services/database';
 import { RootNavigator } from './src/navigation';
+
+// Import web styles for proper scrolling
+if (Platform.OS === 'web') {
+  require('./web-styles.css');
+}
+
+// Custom theme to match the app's color scheme
+const theme = {
+  ...MD3LightTheme,
+  colors: {
+    ...MD3LightTheme.colors,
+    primary: '#2196F3',
+    secondary: '#FFA726',
+  },
+};
 
 export default function App() {
   const [isReady, setIsReady] = useState(false);
@@ -32,28 +49,32 @@ export default function App() {
 
   if (error) {
     return (
-      <View style={styles.container}>
-        <Text style={styles.errorText}>Error: {error}</Text>
-        <StatusBar style="auto" />
-      </View>
+      <PaperProvider theme={theme}>
+        <View style={styles.container}>
+          <Text style={styles.errorText}>Error: {error}</Text>
+          <StatusBar style="auto" />
+        </View>
+      </PaperProvider>
     );
   }
 
   if (!isReady) {
     return (
-      <View style={styles.container}>
-        <ActivityIndicator size="large" color="#0066cc" />
-        <Text style={styles.loadingText}>Initializing database...</Text>
-        <StatusBar style="auto" />
-      </View>
+      <PaperProvider theme={theme}>
+        <View style={styles.container}>
+          <ActivityIndicator size="large" color="#0066cc" />
+          <Text style={styles.loadingText}>Initializing database...</Text>
+          <StatusBar style="auto" />
+        </View>
+      </PaperProvider>
     );
   }
 
   return (
-    <>
+    <PaperProvider theme={theme}>
       <RootNavigator />
       <StatusBar style="auto" />
-    </>
+    </PaperProvider>
   );
 }
 

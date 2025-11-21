@@ -13,7 +13,9 @@ import { querySql, executeSql } from './database';
  */
 export const createClient = async (clientData: ClientInput): Promise<Client> => {
   try {
+    console.log('Creating client with data:', clientData);
     const id = generateUUID();
+    console.log('Generated UUID:', id);
     const now = new Date().toISOString();
     
     const client: Client = {
@@ -23,6 +25,7 @@ export const createClient = async (clientData: ClientInput): Promise<Client> => 
       updatedAt: now,
     };
     
+    console.log('Executing SQL insert for client:', client);
     await executeSql(
       `INSERT INTO clients (id, name, address, contactPerson, phone, email, notes, createdAt, updatedAt)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
@@ -39,9 +42,11 @@ export const createClient = async (clientData: ClientInput): Promise<Client> => 
       ]
     );
     
+    console.log('Client created successfully:', client.id);
     return client;
   } catch (error) {
     console.error('Error creating client:', error);
+    console.error('Error details:', JSON.stringify(error, null, 2));
     throw new Error(`Failed to create client: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 };

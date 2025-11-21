@@ -13,18 +13,20 @@ import { querySql, executeSql } from './database';
  */
 export const createOrder = async (orderData: OrderInput): Promise<InspectionOrder> => {
   try {
+    console.log('createOrder called with data:', orderData);
     const id = generateUUID();
+    console.log('Generated order UUID:', id);
     const now = new Date().toISOString();
     
-    // Ensure status is 'draft' for new orders (Requirement 2.2)
+    // Use the status from orderData (can be draft or in_progress)
     const order: InspectionOrder = {
       id,
       ...orderData,
-      status: OrderStatus.DRAFT,
       createdAt: now,
       updatedAt: now,
     };
     
+    console.log('Executing SQL insert for order:', order);
     await executeSql(
       `INSERT INTO inspection_orders (
         id, clientId, objectName, address, createdAt, scheduledDate, status, notes,
@@ -55,9 +57,11 @@ export const createOrder = async (orderData: OrderInput): Promise<InspectionOrde
       ]
     );
     
+    console.log('Order created successfully:', order.id);
     return order;
   } catch (error) {
     console.error('Error creating order:', error);
+    console.error('Error details:', JSON.stringify(error, null, 2));
     throw new Error(`Failed to create order: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 };

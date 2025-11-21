@@ -5,3 +5,4 @@ export { Checkbox } from './Checkbox';
 export { Switch } from './Switch';
 export { Picker } from './Picker';
 export type { PickerItem } from './Picker';
+export { DatePicker } from './DatePicker';

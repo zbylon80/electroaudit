@@ -1,14 +1,16 @@
 import React, { useEffect, useState } from 'react';
-import { View, StyleSheet, ScrollView, Alert, ActivityIndicator } from 'react-native';
+import { View, StyleSheet, ScrollView, Alert, ActivityIndicator, Platform } from 'react-native';
 import { useRoute, useNavigation, RouteProp } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { useForm, Controller } from 'react-hook-form';
 import { RootStackParamList } from '../navigation/types';
 import { FormField } from '../components/forms/FormField';
 import { Button } from '../components/common/Button';
-import { ClientInput } from '../types';
+import { Client, ClientInput } from '../types';
 import { createClient, updateClient, getClient } from '../services/client';
+import { webGetClient, webCreateClient, webUpdateClient, initWebStorage } from '../services/webStorage';
 import { validateRequired, validateEmail } from '../utils/validators';
+import { v4 as uuidv4 } from 'uuid';
 
 type ClientFormScreenRouteProp = RouteProp<RootStackParamList, 'ClientFormScreen'>;
 type ClientFormScreenNavigationProp = StackNavigationProp<RootStackParamList, 'ClientFormScreen'>;
@@ -29,6 +31,7 @@ export const ClientFormScreen: React.FC = () => {
   
   const [loading, setLoading] = useState(false);
   const [initialLoading, setInitialLoading] = useState(!!clientId);
+  const isWeb = Platform.OS === 'web';
 
   const {
     control,
@@ -53,7 +56,14 @@ export const ClientFormScreen: React.FC = () => {
 
       try {
         setInitialLoading(true);
-        const client = await getClient(clientId);
+        
+        let client: Client | null = null;
+        if (isWeb) {
+          initWebStorage();
+          client = webGetClient(clientId);
+        } else {
+          client = await getClient(clientId);
+        }
         
         if (client) {
           setValue('name', client.name);
@@ -76,7 +86,7 @@ export const ClientFormScreen: React.FC = () => {
     };
 
     loadClient();
-  }, [clientId, navigation, setValue]);
+  }, [clientId, navigation, setValue, isWeb]);
 
   const onSubmit = async (data: ClientFormData) => {
     try {
@@ -92,12 +102,33 @@ export const ClientFormScreen: React.FC = () => {
         notes: data.notes.trim() || undefined,
       };
 
-      if (clientId) {
-        // Update existing client
-        await updateClient(clientId, clientInput);
+      if (isWeb) {
+        initWebStorage();
+        const now = new Date().toISOString();
+        
+        if (clientId) {
+          // Update existing client on web
+          webUpdateClient(clientId, {
+            ...clientInput,
+            updatedAt: now,
+          });
+        } else {
+          // Create new client on web
+          const newClient: Client = {
+            id: uuidv4(),
+            ...clientInput,
+            createdAt: now,
+            updatedAt: now,
+          };
+          webCreateClient(newClient);
+        }
       } else {
-        // Create new client
-        await createClient(clientInput);
+        // Use SQLite on mobile
+        if (clientId) {
+          await updateClient(clientId, clientInput);
+        } else {
+          await createClient(clientInput);
+        }
       }
 
       // Navigate back on success

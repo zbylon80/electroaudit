@@ -1,6 +1,6 @@
-import React, { useEffect, useState } from 'react';
-import { View, StyleSheet, ScrollView, Alert, ActivityIndicator } from 'react-native';
-import { useRoute, useNavigation, RouteProp } from '@react-navigation/native';
+import React, { useEffect, useState, useCallback } from 'react';
+import { View, StyleSheet, ScrollView, Alert, ActivityIndicator, Platform } from 'react-native';
+import { useRoute, useNavigation, RouteProp, useFocusEffect } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { useForm, Controller } from 'react-hook-form';
 import { RootStackParamList } from '../navigation/types';
@@ -9,10 +9,13 @@ import { FormSection } from '../components/forms/FormSection';
 import { Button } from '../components/common/Button';
 import { Picker, PickerItem } from '../components/common/Picker';
 import { Checkbox } from '../components/common/Checkbox';
-import { Client, OrderInput, OrderStatus } from '../types';
+import { DatePicker } from '../components/common/DatePicker';
+import { Client, InspectionOrder, OrderInput, OrderStatus } from '../types';
 import { createOrder, updateOrder, getOrder } from '../services/order';
 import { getAllClients, getClient } from '../services/client';
+import { webGetAllClients, webGetClient, webGetOrder, webCreateOrder, webUpdateOrder, initWebStorage } from '../services/webStorage';
 import { validateRequired } from '../utils/validators';
+import { v4 as uuidv4 } from 'uuid';
 
 type OrderFormScreenRouteProp = RouteProp<RootStackParamList, 'OrderFormScreen'>;
 type OrderFormScreenNavigationProp = StackNavigationProp<RootStackParamList, 'OrderFormScreen'>;
@@ -44,6 +47,7 @@ export const OrderFormScreen: React.FC = () => {
   const [initialLoading, setInitialLoading] = useState(!!orderId);
   const [clients, setClients] = useState<Client[]>([]);
   const [clientsLoading, setClientsLoading] = useState(true);
+  const isWeb = Platform.OS === 'web';
 
   const {
     control,
@@ -73,23 +77,33 @@ export const OrderFormScreen: React.FC = () => {
 
   const selectedClientId = watch('clientId');
 
-  // Load clients
-  useEffect(() => {
-    const loadClients = async () => {
-      try {
-        setClientsLoading(true);
-        const allClients = await getAllClients();
-        setClients(allClients);
-      } catch (error) {
-        console.error('Error loading clients:', error);
-        Alert.alert('Error', 'Failed to load clients');
-      } finally {
-        setClientsLoading(false);
-      }
-    };
+  // Load clients - refresh when screen comes into focus
+  useFocusEffect(
+    useCallback(() => {
+      const loadClients = async () => {
+        try {
+          setClientsLoading(true);
+          
+          let allClients: Client[];
+          if (isWeb) {
+            initWebStorage();
+            allClients = webGetAllClients();
+          } else {
+            allClients = await getAllClients();
+          }
+          
+          setClients(allClients);
+        } catch (error) {
+          console.error('Error loading clients:', error);
+          Alert.alert('Error', 'Failed to load clients');
+        } finally {
+          setClientsLoading(false);
+        }
+      };
 
-    loadClients();
-  }, []);
+      loadClients();
+    }, [isWeb])
+  );
 
   // Load existing order data if editing
   useEffect(() => {
@@ -98,7 +112,14 @@ export const OrderFormScreen: React.FC = () => {
 
       try {
         setInitialLoading(true);
-        const order = await getOrder(orderId);
+        
+        let order: InspectionOrder | null = null;
+        if (isWeb) {
+          initWebStorage();
+          order = webGetOrder(orderId);
+        } else {
+          order = await getOrder(orderId);
+        }
         
         if (order) {
           setValue('clientId', order.clientId);
@@ -130,14 +151,20 @@ export const OrderFormScreen: React.FC = () => {
     };
 
     loadOrder();
-  }, [orderId, navigation, setValue]);
+  }, [orderId, navigation, setValue, isWeb]);
 
   // Auto-fill address when client is selected
   useEffect(() => {
     const fillClientAddress = async () => {
       if (selectedClientId && !orderId) {
         try {
-          const client = await getClient(selectedClientId);
+          let client: Client | null = null;
+          if (isWeb) {
+            client = webGetClient(selectedClientId);
+          } else {
+            client = await getClient(selectedClientId);
+          }
+          
           if (client) {
             setValue('address', client.address);
           }
@@ -148,7 +175,7 @@ export const OrderFormScreen: React.FC = () => {
     };
 
     fillClientAddress();
-  }, [selectedClientId, orderId, setValue]);
+  }, [selectedClientId, orderId, setValue, isWeb]);
 
   const handleAddClient = () => {
     navigation.navigate('ClientFormScreen', {});
@@ -156,6 +183,8 @@ export const OrderFormScreen: React.FC = () => {
 
   const onSubmit = async (data: OrderFormData, status: OrderStatus) => {
     try {
+      console.log('onSubmit called with status:', status);
+      console.log('Form data:', data);
       setLoading(true);
 
       // Prepare order input
@@ -180,14 +209,37 @@ export const OrderFormScreen: React.FC = () => {
 
       let createdOrderId: string;
 
-      if (orderId) {
-        // Update existing order
-        await updateOrder(orderId, orderInput);
-        createdOrderId = orderId;
+      if (isWeb) {
+        initWebStorage();
+        const now = new Date().toISOString();
+        
+        if (orderId) {
+          // Update existing order on web
+          webUpdateOrder(orderId, {
+            ...orderInput,
+            updatedAt: now,
+          });
+          createdOrderId = orderId;
+        } else {
+          // Create new order on web
+          const newOrder: InspectionOrder = {
+            id: uuidv4(),
+            ...orderInput,
+            createdAt: now,
+            updatedAt: now,
+          };
+          webCreateOrder(newOrder);
+          createdOrderId = newOrder.id;
+        }
       } else {
-        // Create new order
-        const newOrder = await createOrder(orderInput);
-        createdOrderId = newOrder.id;
+        // Use SQLite on mobile
+        if (orderId) {
+          await updateOrder(orderId, orderInput);
+          createdOrderId = orderId;
+        } else {
+          const newOrder = await createOrder(orderInput);
+          createdOrderId = newOrder.id;
+        }
       }
 
       // Navigate to OrderDetailsScreen on success
@@ -203,8 +255,27 @@ export const OrderFormScreen: React.FC = () => {
     }
   };
 
-  const handleSaveDraft = handleSubmit((data) => onSubmit(data, OrderStatus.DRAFT));
-  const handleStartMeasurements = handleSubmit((data) => onSubmit(data, OrderStatus.IN_PROGRESS));
+  const handleSaveDraft = handleSubmit(
+    (data) => {
+      console.log('Save as Draft - Form valid, submitting:', data);
+      return onSubmit(data, OrderStatus.DRAFT);
+    },
+    (errors) => {
+      console.log('Save as Draft - Form validation failed:', errors);
+      Alert.alert('Validation Error', 'Please fill in all required fields');
+    }
+  );
+  
+  const handleStartMeasurements = handleSubmit(
+    (data) => {
+      console.log('Start Measurements - Form valid, submitting:', data);
+      return onSubmit(data, OrderStatus.IN_PROGRESS);
+    },
+    (errors) => {
+      console.log('Start Measurements - Form validation failed:', errors);
+      Alert.alert('Validation Error', 'Please fill in all required fields');
+    }
+  );
 
   if (initialLoading || clientsLoading) {
     return (
@@ -215,7 +286,7 @@ export const OrderFormScreen: React.FC = () => {
   }
 
   const clientPickerItems: PickerItem[] = clients.map((client) => ({
-    label: client.name,
+    label: `${client.name} - ${client.address}`,
     value: client.id,
   }));
 
@@ -305,12 +376,11 @@ export const OrderFormScreen: React.FC = () => {
             control={control}
             name="scheduledDate"
             render={({ field: { onChange, value } }) => (
-              <FormField
+              <DatePicker
                 label="Scheduled Date"
                 value={value}
-                onChangeText={onChange}
+                onChangeDate={onChange}
                 error={errors.scheduledDate?.message}
-                placeholder="YYYY-MM-DD"
               />
             )}
           />
@@ -499,11 +569,10 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     borderRadius: 8,
     padding: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
     elevation: 3,
+    ...(Platform.OS === 'web' && {
+      boxShadow: '0px 2px 4px rgba(0, 0, 0, 0.1)',
+    }),
   },
   addClientButton: {
     marginTop: 8,
