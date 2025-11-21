@@ -9,6 +9,13 @@ export const initDatabase = async (): Promise<void> => {
     // Open or create database
     db = await SQLite.openDatabaseAsync('electroaudit.db');
     
+    // Check if schema needs migration
+    const needsMigration = await checkSchemaMigration();
+    if (needsMigration) {
+      console.log('Schema migration needed - dropping and recreating tables...');
+      await dropAllTables();
+    }
+    
     // Create tables
     await createTables();
     
@@ -25,6 +32,65 @@ export const getDatabase = (): SQLite.SQLiteDatabase => {
     throw new Error('Database not initialized. Call initDatabase() first.');
   }
   return db;
+};
+
+// Check if schema migration is needed
+const checkSchemaMigration = async (): Promise<boolean> => {
+  try {
+    const database = getDatabase();
+    
+    // Try to get the schema for measurement_points table
+    const result = await database.getAllAsync(
+      "SELECT sql FROM sqlite_master WHERE type='table' AND name='measurement_points'"
+    );
+    
+    if (result.length === 0) {
+      // Table doesn't exist, no migration needed (fresh install)
+      return false;
+    }
+    
+    const schema = (result[0] as any).sql as string;
+    
+    // Check if the old schema has incorrect CHECK constraint values
+    // Old schema had: 'socket', 'lighting', 'rcd', 'earthing', 'lps', 'other'
+    // New schema has: 'socket_1p', 'socket_3p', 'lighting', 'rcd', 'earthing', 'lps', 'other'
+    if (schema.includes("'socket'") && !schema.includes("'socket_1p'")) {
+      console.log('Old schema detected - migration needed');
+      return true;
+    }
+    
+    return false;
+  } catch (error) {
+    console.error('Error checking schema migration:', error);
+    // If we can't check, assume migration is needed to be safe
+    return true;
+  }
+};
+
+// Drop all tables (for schema migration)
+const dropAllTables = async (): Promise<void> => {
+  try {
+    const database = getDatabase();
+    
+    // Disable foreign keys temporarily
+    await database.execAsync('PRAGMA foreign_keys = OFF;');
+    
+    // Drop all tables
+    await database.execAsync('DROP TABLE IF EXISTS measurement_results');
+    await database.execAsync('DROP TABLE IF EXISTS visual_inspections');
+    await database.execAsync('DROP TABLE IF EXISTS measurement_points');
+    await database.execAsync('DROP TABLE IF EXISTS rooms');
+    await database.execAsync('DROP TABLE IF EXISTS inspection_orders');
+    await database.execAsync('DROP TABLE IF EXISTS clients');
+    
+    // Re-enable foreign keys
+    await database.execAsync('PRAGMA foreign_keys = ON;');
+    
+    console.log('All tables dropped successfully');
+  } catch (error) {
+    console.error('Error dropping tables:', error);
+    throw error;
+  }
 };
 
 // Create all tables with proper foreign keys and constraints
@@ -95,7 +161,7 @@ const createTables = async (): Promise<void> => {
       inspectionOrderId TEXT NOT NULL,
       roomId TEXT,
       label TEXT NOT NULL,
-      type TEXT NOT NULL CHECK(type IN ('socket', 'lighting', 'rcd', 'earthing', 'lps', 'other')),
+      type TEXT NOT NULL CHECK(type IN ('socket_1p', 'socket_3p', 'lighting', 'rcd', 'earthing', 'lps', 'other')),
       circuitSymbol TEXT,
       notes TEXT,
       createdAt TEXT NOT NULL,
@@ -185,3 +251,25 @@ export const querySql = async (
 
 // Export helper functions
 export { boolToInt, intToBool };
+
+/**
+ * Clear all data from the database (useful for testing/resetting)
+ */
+export const clearDatabase = async (): Promise<void> => {
+  try {
+    const database = getDatabase();
+    
+    // Delete all data from tables in reverse order (to respect foreign keys)
+    await database.execAsync('DELETE FROM measurement_results');
+    await database.execAsync('DELETE FROM visual_inspections');
+    await database.execAsync('DELETE FROM measurement_points');
+    await database.execAsync('DELETE FROM rooms');
+    await database.execAsync('DELETE FROM inspection_orders');
+    await database.execAsync('DELETE FROM clients');
+    
+    console.log('Database cleared successfully');
+  } catch (error) {
+    console.error('Failed to clear database:', error);
+    throw error;
+  }
+};

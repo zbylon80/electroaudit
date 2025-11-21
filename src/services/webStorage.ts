@@ -231,13 +231,26 @@ export const webGetPointStatus = (pointId: string): PointStatus => {
     result.lpsVisualOk,
   ];
   
-  // Filter out null/undefined values and check if any remaining flag is false
-  const hasFailure = passFlags.some(flag => flag !== null && flag !== undefined && flag === false);
+  // Filter to only boolean values (ignore null/undefined)
+  const definedFlags = passFlags.filter(flag => typeof flag === 'boolean');
+  
+  // If no flags are defined, consider it unmeasured
+  if (definedFlags.length === 0) {
+    return PointStatus.UNMEASURED;
+  }
+  
+  // Check if any defined flag is false
+  const hasFailure = definedFlags.some(flag => flag === false);
   
   return hasFailure ? PointStatus.NOT_OK : PointStatus.OK;
 };
 
 // Result operations
+export const webGetResultByPoint = (pointId: string): MeasurementResult | null => {
+  const results = getFromStorage<MeasurementResult>(STORAGE_KEYS.RESULTS);
+  return results.find(r => r.measurementPointId === pointId) || null;
+};
+
 export const webCreateResult = (result: MeasurementResult): void => {
   const results = getFromStorage<MeasurementResult>(STORAGE_KEYS.RESULTS);
   // Remove existing result for this point if any (UPSERT behavior)

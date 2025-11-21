@@ -9,6 +9,11 @@ import { RootNavigator } from './src/navigation';
 // Import web styles for proper scrolling
 if (Platform.OS === 'web') {
   require('./web-styles.css');
+  
+  // Expose clearWebStorage to window for easy access from browser console
+  const { clearWebStorage } = require('./src/services/webStorage');
+  (window as any).clearWebStorage = clearWebStorage;
+  console.log('💡 Tip: Run clearWebStorage() in console to clear all web data');
 }
 
 // Custom theme to match the app's color scheme

@@ -10,6 +10,10 @@ import { OrderStatus, PointType } from '../types';
  */
 export const seedDatabase = async (): Promise<void> => {
   try {
+    console.log('Clearing existing data...');
+    const { clearDatabase } = await import('../services/database');
+    await clearDatabase();
+    
     console.log('Seeding database with sample data...');
 
     // Create sample clients
@@ -133,17 +137,17 @@ export const seedDatabase = async (): Promise<void> => {
     await createPoint({
       inspectionOrderId: order1.id,
       roomId: room1.id,
-      label: 'Gniazdo 1',
-      type: PointType.SOCKET,
+      label: 'Gniazdo 1F 1',
+      type: PointType.SOCKET_1P,
       circuitSymbol: 'L1.1',
-      notes: 'Gniazdo przy biurku',
+      notes: 'Gniazdo 1-fazowe przy biurku',
     });
 
     await createPoint({
       inspectionOrderId: order1.id,
       roomId: room1.id,
-      label: 'Gniazdo 2',
-      type: PointType.SOCKET,
+      label: 'Gniazdo 1F 2',
+      type: PointType.SOCKET_1P,
       circuitSymbol: 'L1.2',
     });
 
@@ -158,8 +162,8 @@ export const seedDatabase = async (): Promise<void> => {
     await createPoint({
       inspectionOrderId: order1.id,
       roomId: room2.id,
-      label: 'Gniazdo 1',
-      type: PointType.SOCKET,
+      label: 'Gniazdo 1F 3',
+      type: PointType.SOCKET_1P,
       circuitSymbol: 'L1.3',
     });
 
@@ -174,10 +178,10 @@ export const seedDatabase = async (): Promise<void> => {
     await createPoint({
       inspectionOrderId: order1.id,
       roomId: room3.id,
-      label: 'Gniazdo kuchenne',
-      type: PointType.SOCKET,
+      label: 'Gniazdo kuchenne 1F',
+      type: PointType.SOCKET_1P,
       circuitSymbol: 'L1.4',
-      notes: 'Gniazdo przy blacie',
+      notes: 'Gniazdo 1-fazowe przy blacie',
     });
 
     await createPoint({
@@ -212,9 +216,10 @@ export const seedDatabase = async (): Promise<void> => {
     await createPoint({
       inspectionOrderId: order2.id,
       roomId: room4.id,
-      label: 'Gniazdo siłowe 1',
-      type: PointType.SOCKET,
+      label: 'Gniazdo siłowe 3F 1',
+      type: PointType.SOCKET_3P,
       circuitSymbol: 'L3.1',
+      notes: 'Gniazdo 3-fazowe dla maszyn',
     });
 
     await createPoint({
@@ -228,9 +233,10 @@ export const seedDatabase = async (): Promise<void> => {
     await createPoint({
       inspectionOrderId: order2.id,
       roomId: room5.id,
-      label: 'Gniazdo siłowe 2',
-      type: PointType.SOCKET,
+      label: 'Gniazdo siłowe 3F 2',
+      type: PointType.SOCKET_3P,
       circuitSymbol: 'L3.2',
+      notes: 'Gniazdo 3-fazowe dla maszyn',
     });
 
     await createPoint({
@@ -264,33 +270,25 @@ export const seedDatabase = async (): Promise<void> => {
     const point3_1 = await createPoint({
       inspectionOrderId: order3.id,
       roomId: room6.id,
-      label: 'Gniazdo rack 1',
-      type: PointType.SOCKET,
+      label: 'Gniazdo rack 1F 1',
+      type: PointType.SOCKET_1P,
       circuitSymbol: 'L5.1',
-      notes: 'Zasilanie rack serwerowy',
+      notes: 'Zasilanie 1-fazowe rack serwerowy',
     });
 
     await createOrUpdateResult({
       measurementPointId: point3_1.id,
       loopImpedance: 0.15,
       loopResultPass: true,
-      insulationLn: 450.0,
-      insulationLpe: 480.0,
-      insulationNpe: 470.0,
-      insulationResultPass: true,
-      peResistance: 0.08,
-      peResultPass: true,
-      polarityOk: true,
-      phaseSequenceOk: true,
-      breakerCheckOk: true,
-      comments: 'Wszystkie pomiary w normie',
+      polarityOk: true, // 1-phase socket - only polarity
+      comments: 'Wszystkie pomiary w normie - gniazdo 1-fazowe',
     });
 
     const point3_2 = await createPoint({
       inspectionOrderId: order3.id,
       roomId: room6.id,
-      label: 'Gniazdo rack 2',
-      type: PointType.SOCKET,
+      label: 'Gniazdo rack 1F 2',
+      type: PointType.SOCKET_1P,
       circuitSymbol: 'L5.2',
     });
 
@@ -298,15 +296,8 @@ export const seedDatabase = async (): Promise<void> => {
       measurementPointId: point3_2.id,
       loopImpedance: 0.18,
       loopResultPass: true,
-      insulationLn: 420.0,
-      insulationLpe: 440.0,
-      insulationNpe: 435.0,
-      insulationResultPass: true,
-      peResistance: 0.09,
-      peResultPass: true,
-      polarityOk: true,
-      phaseSequenceOk: true,
-      breakerCheckOk: true,
+      polarityOk: true, // 1-phase socket - only polarity
+      comments: 'Gniazdo 1-fazowe - parametry OK',
     });
 
     const point3_3 = await createPoint({
@@ -330,25 +321,18 @@ export const seedDatabase = async (): Promise<void> => {
     const point3_4 = await createPoint({
       inspectionOrderId: order3.id,
       roomId: room7.id,
-      label: 'Gniazdo rack 3',
-      type: PointType.SOCKET,
+      label: 'Gniazdo rack 3F 3',
+      type: PointType.SOCKET_3P,
       circuitSymbol: 'L5.3',
+      notes: 'Gniazdo 3-fazowe dla serwerów',
     });
 
     await createOrUpdateResult({
       measurementPointId: point3_4.id,
       loopImpedance: 0.22,
       loopResultPass: false, // Failed measurement
-      insulationLn: 380.0,
-      insulationLpe: 390.0,
-      insulationNpe: 385.0,
-      insulationResultPass: true,
-      peResistance: 0.12,
-      peResultPass: true,
-      polarityOk: true,
-      phaseSequenceOk: true,
-      breakerCheckOk: true,
-      comments: 'Impedancja pętli zwarcia powyżej normy - wymaga naprawy',
+      phaseSequenceOk: true, // 3-phase socket - only phase sequence
+      comments: 'Impedancja pętli zwarcia powyżej normy - wymaga naprawy (gniazdo 3-fazowe)',
     });
 
     const point3_5 = await createPoint({
@@ -363,62 +347,42 @@ export const seedDatabase = async (): Promise<void> => {
       measurementPointId: point3_5.id,
       loopImpedance: 0.14,
       loopResultPass: true,
-      insulationLn: 500.0,
-      insulationLpe: 510.0,
-      insulationNpe: 505.0,
-      insulationResultPass: true,
-      polarityOk: true,
-      phaseSequenceOk: true,
-      breakerCheckOk: true,
+      polarityOk: true, // Lighting - only polarity
+      comments: 'Oświetlenie awaryjne - parametry OK',
     });
 
     const point3_6 = await createPoint({
       inspectionOrderId: order3.id,
       roomId: room8.id,
-      label: 'Zasilanie UPS 1',
-      type: PointType.SOCKET,
+      label: 'Zasilanie UPS 3F 1',
+      type: PointType.SOCKET_3P,
       circuitSymbol: 'L7.1',
-      notes: 'Główny UPS 100kVA',
+      notes: 'Główny UPS 100kVA - zasilanie 3-fazowe',
     });
 
     await createOrUpdateResult({
       measurementPointId: point3_6.id,
       loopImpedance: 0.11,
       loopResultPass: true,
-      insulationLn: 520.0,
-      insulationLpe: 530.0,
-      insulationNpe: 525.0,
-      insulationResultPass: true,
-      peResistance: 0.06,
-      peResultPass: true,
-      polarityOk: true,
-      phaseSequenceOk: true,
-      breakerCheckOk: true,
-      comments: 'Doskonałe parametry',
+      phaseSequenceOk: true, // 3-phase socket - only phase sequence
+      comments: 'Doskonałe parametry - gniazdo 3-fazowe UPS',
     });
 
     const point3_7 = await createPoint({
       inspectionOrderId: order3.id,
       roomId: room8.id,
-      label: 'Zasilanie UPS 2',
-      type: PointType.SOCKET,
+      label: 'Zasilanie UPS 3F 2',
+      type: PointType.SOCKET_3P,
       circuitSymbol: 'L7.2',
-      notes: 'Zapasowy UPS 50kVA',
+      notes: 'Zapasowy UPS 50kVA - zasilanie 3-fazowe',
     });
 
     await createOrUpdateResult({
       measurementPointId: point3_7.id,
       loopImpedance: 0.13,
       loopResultPass: true,
-      insulationLn: 490.0,
-      insulationLpe: 500.0,
-      insulationNpe: 495.0,
-      insulationResultPass: true,
-      peResistance: 0.07,
-      peResultPass: true,
-      polarityOk: true,
-      phaseSequenceOk: true,
-      breakerCheckOk: true,
+      phaseSequenceOk: true, // 3-phase socket - only phase sequence
+      comments: 'Gniazdo 3-fazowe zapasowego UPS - parametry OK',
     });
 
     // Unassigned points for order3
@@ -454,7 +418,7 @@ export const seedDatabase = async (): Promise<void> => {
     });
 
     console.log('✅ Database seeded successfully!');
-    console.log('Created 3 clients, 4 orders, 11 rooms, 25 measurement points, and 9 measurement results');
+    console.log('Created 3 clients, 4 orders, 11 rooms, 25 measurement points (1-phase and 3-phase sockets), and 9 measurement results');
   } catch (error) {
     console.error('❌ Error seeding database:', error);
     throw error;

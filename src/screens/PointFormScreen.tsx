@@ -35,7 +35,8 @@ interface PointFormData {
 // Map point types to Polish labels
 const getTypeLabel = (type: PointType): string => {
   const labels: Record<PointType, string> = {
-    [PointType.SOCKET]: 'Gniazdo',
+    [PointType.SOCKET_1P]: 'Gniazdo 1F',
+    [PointType.SOCKET_3P]: 'Gniazdo 3F',
     [PointType.LIGHTING]: 'Oświetlenie',
     [PointType.RCD]: 'RCD',
     [PointType.EARTHING]: 'Uziemienie',
@@ -89,7 +90,7 @@ export const PointFormScreen: React.FC = () => {
   } = useForm<PointFormData>({
     defaultValues: {
       label: '',
-      type: PointType.SOCKET,
+      type: PointType.SOCKET_1P,
       roomId: '',
       circuitSymbol: '',
       notes: '',
@@ -119,7 +120,7 @@ export const PointFormScreen: React.FC = () => {
         
         // Auto-generate label for new points
         if (!pointId) {
-          const autoLabel = generateAutoLabel(PointType.SOCKET, loadedPoints);
+          const autoLabel = generateAutoLabel(PointType.SOCKET_1P, loadedPoints);
           setValue('label', autoLabel);
           
           // Set roomId if passed from navigation (when user filtered by room)
@@ -240,7 +241,8 @@ export const PointFormScreen: React.FC = () => {
 
   // Prepare type picker items
   const typeItems: PickerItem[] = [
-    { label: 'Gniazdo', value: PointType.SOCKET },
+    { label: 'Gniazdo 1-fazowe', value: PointType.SOCKET_1P },
+    { label: 'Gniazdo 3-fazowe', value: PointType.SOCKET_3P },
     { label: 'Oświetlenie', value: PointType.LIGHTING },
     { label: 'RCD', value: PointType.RCD },
     { label: 'Uziemienie', value: PointType.EARTHING },

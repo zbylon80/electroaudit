@@ -5,13 +5,14 @@ import { StackNavigationProp } from '@react-navigation/stack';
 import { createMaterialTopTabNavigator } from '@react-navigation/material-top-tabs';
 import { IconButton, FAB, Dialog, Portal, Paragraph } from 'react-native-paper';
 import { RootStackParamList } from '../navigation/types';
-import { InspectionOrder, Client, Room, MeasurementPoint, PointType, PointStatus } from '../types';
+import { InspectionOrder, Client, Room, MeasurementPoint, MeasurementResult, PointType, PointStatus } from '../types';
 import { getOrder, deleteOrder } from '../services/order';
 import { getClient } from '../services/client';
 import { getRoomsByOrder, deleteRoom, createRoom } from '../services/room';
 import { getPointsByOrder, getPointStatus, deletePoint } from '../services/point';
+import { getResultByPoint } from '../services/result';
 import { generateUUID } from '../utils';
-import { webGetOrder, webGetClient, webDeleteOrder, webGetRoomsByOrder, webDeleteRoom, webCreateRoom, webGetPointsByOrder, webGetPointStatus, webDeletePoint, initWebStorage } from '../services/webStorage';
+import { webGetOrder, webGetClient, webDeleteOrder, webGetRoomsByOrder, webDeleteRoom, webCreateRoom, webGetPointsByOrder, webGetPointStatus, webDeletePoint, webGetResultByPoint, initWebStorage } from '../services/webStorage';
 import { EmptyState } from '../components/lists/EmptyState';
 import { Button } from '../components/common/Button';
 import { Picker, PickerItem } from '../components/common/Picker';
@@ -280,6 +281,7 @@ const PointsTab: React.FC = () => {
   const [selectedRoomId, setSelectedRoomId] = useState<string>('all');
   const [loading, setLoading] = useState(true);
   const [pointStatuses, setPointStatuses] = useState<Record<string, PointStatus>>({});
+  const [pointResults, setPointResults] = useState<Record<string, MeasurementResult | null>>({});
   const [deleteDialogVisible, setDeleteDialogVisible] = useState(false);
   const [pointToDelete, setPointToDelete] = useState<{ id: string; label: string } | null>(null);
   const isWeb = Platform.OS === 'web';
@@ -302,16 +304,20 @@ const PointsTab: React.FC = () => {
       setPoints(pointsData);
       setRooms(roomsData);
       
-      // Load status for each point
+      // Load status and results for each point
       const statuses: Record<string, PointStatus> = {};
+      const results: Record<string, MeasurementResult | null> = {};
       for (const point of pointsData) {
         if (isWeb) {
           statuses[point.id] = webGetPointStatus(point.id);
+          results[point.id] = webGetResultByPoint(point.id);
         } else {
           statuses[point.id] = await getPointStatus(point.id);
+          results[point.id] = await getResultByPoint(point.id);
         }
       }
       setPointStatuses(statuses);
+      setPointResults(results);
     } catch (error) {
       console.error('Error loading points:', error);
     } finally {
@@ -404,7 +410,8 @@ const PointsTab: React.FC = () => {
 
   const getTypeIcon = (type: PointType): string => {
     switch (type) {
-      case PointType.SOCKET:
+      case PointType.SOCKET_1P:
+      case PointType.SOCKET_3P:
         return 'power-socket';
       case PointType.LIGHTING:
         return 'lightbulb';
@@ -423,8 +430,10 @@ const PointsTab: React.FC = () => {
 
   const getTypeLabel = (type: PointType): string => {
     switch (type) {
-      case PointType.SOCKET:
-        return 'Socket';
+      case PointType.SOCKET_1P:
+        return 'Socket 1P';
+      case PointType.SOCKET_3P:
+        return 'Socket 3P';
       case PointType.LIGHTING:
         return 'Lighting';
       case PointType.RCD:
@@ -452,6 +461,7 @@ const PointsTab: React.FC = () => {
 
   const renderPointItem = ({ item }: { item: MeasurementPoint }) => {
     const status = pointStatuses[item.id] || PointStatus.UNMEASURED;
+    const result = pointResults[item.id];
     const room = item.roomId ? rooms.find(r => r.id === item.roomId) : null;
     
     return (
@@ -496,6 +506,9 @@ const PointsTab: React.FC = () => {
           </View>
           {item.notes && (
             <Text style={styles.pointNotes}>{item.notes}</Text>
+          )}
+          {result?.comments && (
+            <Text style={styles.pointComments}>💬 {result.comments}</Text>
           )}
         </TouchableOpacity>
         <TouchableOpacity 
@@ -1100,5 +1113,11 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#666',
     textAlign: 'center',
+  },
+  pointComments: {
+    fontSize: 13,
+    color: '#2196F3',
+    marginTop: 4,
+    fontStyle: 'italic',
   },
 });

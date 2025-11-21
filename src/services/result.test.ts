@@ -2,10 +2,16 @@ import * as fc from 'fast-check';
 import * as SQLite from 'expo-sqlite';
 import { initDatabase } from './database';
 import { createOrUpdateResult, getResultByPoint } from './result';
-import { ResultInput } from '../types';
+import { ResultInput, PointType } from '../types';
+import * as pointService from './point';
 
 // Mock expo-sqlite
 jest.mock('expo-sqlite');
+
+// Mock point service
+jest.mock('./point', () => ({
+  getPoint: jest.fn(),
+}));
 
 describe('MeasurementResult Service Property Tests', () => {
   let mockDb: any;
@@ -27,6 +33,16 @@ describe('MeasurementResult Service Property Tests', () => {
     
     // Initialize database
     await initDatabase();
+    
+    // Mock getPoint to return a valid measurement point (OTHER type allows all fields)
+    (pointService.getPoint as jest.Mock).mockResolvedValue({
+      id: '00000000-0000-1000-8000-000000000000',
+      inspectionOrderId: '00000000-0000-1000-8000-000000000001',
+      label: 'Test Point',
+      type: PointType.OTHER,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    });
   });
 
 // Arbitraries (generators) for property-based testing

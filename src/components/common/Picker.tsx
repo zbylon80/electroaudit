@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, StyleSheet, ViewStyle, Platform, TouchableOpacity } from 'react-native';
+import { View, StyleSheet, ViewStyle, Platform, TouchableOpacity, ScrollView } from 'react-native';
 import { Menu, Button, Text } from 'react-native-paper';
 
 export interface PickerItem {
@@ -67,13 +67,15 @@ export const Picker: React.FC<PickerProps> = ({
           </TouchableOpacity>
         }
       >
-        {items.map((item) => (
-          <Menu.Item
-            key={item.value}
-            onPress={() => handleItemPress(item.value)}
-            title={item.label}
-          />
-        ))}
+        <ScrollView style={styles.menuScroll}>
+          {items.map((item) => (
+            <Menu.Item
+              key={item.value}
+              onPress={() => handleItemPress(item.value)}
+              title={item.label}
+            />
+          ))}
+        </ScrollView>
       </Menu>
     </View>
   );
@@ -109,6 +111,9 @@ const styles = StyleSheet.create({
     color: '#999',
   },
   menuContent: {
-    maxHeight: 300,
+    maxHeight: 400,
+  },
+  menuScroll: {
+    maxHeight: 400,
   },
 });

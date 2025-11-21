@@ -1,10 +1,76 @@
-import { MeasurementResult, ResultInput } from '../types';
+import { MeasurementResult, ResultInput, PointType } from '../types';
 import { generateUUID, boolToInt, intToBool } from '../utils';
 import { querySql, executeSql } from './database';
+import { getPoint } from './point';
 
 /**
  * ResultService - Handles all CRUD operations for measurement results
  */
+
+/**
+ * Sanitize result data based on point type - removes fields that are not relevant
+ * @param resultData - Raw result data
+ * @param pointType - Type of measurement point
+ * @returns Sanitized result data with only relevant fields
+ */
+const sanitizeResultData = (resultData: ResultInput, pointType: PointType): ResultInput => {
+  const sanitized: ResultInput = {
+    measurementPointId: resultData.measurementPointId,
+    comments: resultData.comments,
+  };
+
+  // Common fields for socket types and lighting
+  if (pointType === PointType.SOCKET_1P || pointType === PointType.SOCKET_3P || pointType === PointType.LIGHTING) {
+    sanitized.loopImpedance = resultData.loopImpedance;
+    sanitized.loopResultPass = resultData.loopResultPass;
+  }
+
+  // Type-specific fields
+  switch (pointType) {
+    case PointType.SOCKET_1P:
+      // 1-phase socket: only polarity
+      sanitized.polarityOk = resultData.polarityOk;
+      break;
+
+    case PointType.SOCKET_3P:
+      // 3-phase socket: only phase sequence
+      sanitized.phaseSequenceOk = resultData.phaseSequenceOk;
+      break;
+
+    case PointType.LIGHTING:
+      // Lighting: only polarity
+      sanitized.polarityOk = resultData.polarityOk;
+      break;
+
+    case PointType.RCD:
+      // RCD: specific RCD fields
+      sanitized.rcdType = resultData.rcdType;
+      sanitized.rcdRatedCurrent = resultData.rcdRatedCurrent;
+      sanitized.rcdTime1x = resultData.rcdTime1x;
+      sanitized.rcdTime5x = resultData.rcdTime5x;
+      sanitized.rcdResultPass = resultData.rcdResultPass;
+      break;
+
+    case PointType.EARTHING:
+      // Earthing: specific earthing fields
+      sanitized.earthingResistance = resultData.earthingResistance;
+      sanitized.earthingResultPass = resultData.earthingResultPass;
+      break;
+
+    case PointType.LPS:
+      // LPS: specific LPS fields
+      sanitized.lpsEarthingResistance = resultData.lpsEarthingResistance;
+      sanitized.lpsContinuityOk = resultData.lpsContinuityOk;
+      sanitized.lpsVisualOk = resultData.lpsVisualOk;
+      break;
+
+    case PointType.OTHER:
+      // OTHER: allow all fields (no filtering)
+      return resultData;
+  }
+
+  return sanitized;
+};
 
 /**
  * Create or update a measurement result (UPSERT logic)
@@ -14,8 +80,17 @@ import { querySql, executeSql } from './database';
  */
 export const createOrUpdateResult = async (resultData: ResultInput): Promise<MeasurementResult> => {
   try {
+    // Get the measurement point to determine its type
+    const point = await getPoint(resultData.measurementPointId);
+    if (!point) {
+      throw new Error(`Measurement point not found: ${resultData.measurementPointId}`);
+    }
+
+    // Sanitize the result data based on point type
+    const sanitizedData = sanitizeResultData(resultData, point.type);
+
     // Check if a result already exists for this measurement point
-    const existing = await getResultByPoint(resultData.measurementPointId);
+    const existing = await getResultByPoint(sanitizedData.measurementPointId);
     
     const id = existing?.id ?? generateUUID();
     const now = new Date().toISOString();
@@ -23,7 +98,7 @@ export const createOrUpdateResult = async (resultData: ResultInput): Promise<Mea
     
     const result: MeasurementResult = {
       id,
-      ...resultData,
+      ...sanitizedData,
       createdAt,
       updatedAt: now,
     };

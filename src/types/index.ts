@@ -6,7 +6,8 @@ export enum OrderStatus {
 }
 
 export enum PointType {
-  SOCKET = 'socket',
+  SOCKET_1P = 'socket_1p',
+  SOCKET_3P = 'socket_3p',
   LIGHTING = 'lighting',
   RCD = 'rcd',
   EARTHING = 'earthing',

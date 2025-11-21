@@ -36,7 +36,8 @@ describe('Point Service Property Tests', () => {
  */
 const pointTypeArbitrary = (): fc.Arbitrary<PointType> => {
   return fc.constantFrom(
-    PointType.SOCKET,
+    PointType.SOCKET_1P,
+    PointType.SOCKET_3P,
     PointType.LIGHTING,
     PointType.RCD,
     PointType.EARTHING,

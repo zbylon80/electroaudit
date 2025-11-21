@@ -7,7 +7,7 @@ import { RootStackParamList } from '../navigation/types';
 import { InspectionOrder, OrderStatus } from '../types';
 import { getAllOrders } from '../services/order';
 import { getClient } from '../services/client';
-import { Card, EmptyState, Button } from '../components';
+import { Card, EmptyState } from '../components';
 import { seedDatabase } from '../utils';
 import { 
   webGetAllOrders, 
@@ -35,10 +35,12 @@ export const OrdersScreen: React.FC = () => {
   const [selectedStatus, setSelectedStatus] = useState<OrderStatus | 'all'>('all');
   const [refreshing, setRefreshing] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const isWeb = Platform.OS === 'web';
 
   const loadOrders = async () => {
     try {
+      setError(null);
       let allOrders: InspectionOrder[];
       
       if (isWeb) {
@@ -73,6 +75,9 @@ export const OrdersScreen: React.FC = () => {
       filterOrders(ordersWithClients, selectedStatus);
     } catch (error) {
       console.error('Error loading orders:', error);
+      setError('Failed to load orders. Please restart the app or reinstall Expo Go to clear old data.');
+      setOrders([]);
+      setFilteredOrders([]);
     } finally {
       setLoading(false);
     }
@@ -264,7 +269,7 @@ export const OrdersScreen: React.FC = () => {
           inspectionOrderId: 'web-order-1',
           roomId: 'web-room-1',
           label: 'Gniazdo 1',
-          type: PointType.SOCKET,
+          type: PointType.SOCKET_1P,
           circuitSymbol: 'L1.1',
           notes: 'Gniazdo przy biurku',
           createdAt: new Date().toISOString(),
@@ -276,7 +281,7 @@ export const OrdersScreen: React.FC = () => {
           inspectionOrderId: 'web-order-1',
           roomId: 'web-room-1',
           label: 'Gniazdo 2',
-          type: PointType.SOCKET,
+          type: PointType.SOCKET_1P,
           circuitSymbol: 'L1.2',
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
@@ -298,7 +303,7 @@ export const OrdersScreen: React.FC = () => {
           inspectionOrderId: 'web-order-1',
           roomId: 'web-room-2',
           label: 'Gniazdo 1',
-          type: PointType.SOCKET,
+          type: PointType.SOCKET_1P,
           circuitSymbol: 'L1.3',
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
@@ -320,7 +325,7 @@ export const OrdersScreen: React.FC = () => {
           inspectionOrderId: 'web-order-1',
           roomId: 'web-room-3',
           label: 'Gniazdo kuchenne',
-          type: PointType.SOCKET,
+          type: PointType.SOCKET_1P,
           circuitSymbol: 'L1.4',
           notes: 'Gniazdo przy blacie',
           createdAt: new Date().toISOString(),
@@ -373,7 +378,7 @@ export const OrdersScreen: React.FC = () => {
           inspectionOrderId: 'web-order-2',
           roomId: 'web-room-4',
           label: 'Gniazdo siłowe 1',
-          type: PointType.SOCKET,
+          type: PointType.SOCKET_1P,
           circuitSymbol: 'L3.1',
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
@@ -395,7 +400,7 @@ export const OrdersScreen: React.FC = () => {
           inspectionOrderId: 'web-order-2',
           roomId: 'web-room-5',
           label: 'Gniazdo siłowe 2',
-          type: PointType.SOCKET,
+          type: PointType.SOCKET_1P,
           circuitSymbol: 'L3.2',
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
@@ -444,7 +449,7 @@ export const OrdersScreen: React.FC = () => {
           inspectionOrderId: 'web-order-3',
           roomId: 'web-room-6',
           label: 'Gniazdo rack 1',
-          type: PointType.SOCKET,
+          type: PointType.SOCKET_1P,
           circuitSymbol: 'L5.1',
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
@@ -498,7 +503,7 @@ export const OrdersScreen: React.FC = () => {
           inspectionOrderId: 'web-order-3',
           roomId: 'web-room-7',
           label: 'Gniazdo rack 3',
-          type: PointType.SOCKET,
+          type: PointType.SOCKET_1P,
           circuitSymbol: 'L5.3',
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
@@ -528,7 +533,7 @@ export const OrdersScreen: React.FC = () => {
           inspectionOrderId: 'web-order-3',
           roomId: 'web-room-8',
           label: 'Zasilanie UPS 1',
-          type: PointType.SOCKET,
+          type: PointType.SOCKET_1P,
           circuitSymbol: 'L7.1',
           notes: 'Główny UPS 100kVA',
           createdAt: new Date().toISOString(),
@@ -664,6 +669,24 @@ export const OrdersScreen: React.FC = () => {
     );
   }
 
+  if (error) {
+    return (
+      <View style={styles.container}>
+        <View style={styles.errorContainer}>
+          <Text style={styles.errorTitle}>⚠️ Database Error</Text>
+          <Text style={styles.errorMessage}>{error}</Text>
+          <Text style={styles.errorInstructions}>
+            To fix this:{'\n'}
+            1. Close Expo Go{'\n'}
+            2. Uninstall Expo Go from your device{'\n'}
+            3. Reinstall Expo Go from the app store{'\n'}
+            4. Scan the QR code again
+          </Text>
+        </View>
+      </View>
+    );
+  }
+
   return (
     <View style={styles.container}>
       {/* Filter chips */}
@@ -712,11 +735,7 @@ export const OrdersScreen: React.FC = () => {
             onAction={handleAddOrder}
             icon="plus"
           />
-          {selectedStatus === 'all' && orders.length === 0 && (
-            <Button mode="outlined" onPress={handleSeedData} style={styles.seedButton}>
-              Load Sample Data (for testing)
-            </Button>
-          )}
+          {/* Removed "Load Sample Data" button - create your own data instead */}
         </View>
       ) : (
         <FlatList
@@ -820,4 +839,34 @@ const styles = StyleSheet.create({
     marginTop: 16,
     marginBottom: 80,
   },
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  errorTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#d32f2f',
+    marginBottom: 16,
+    textAlign: 'center',
+  },
+  errorMessage: {
+    fontSize: 16,
+    color: '#666',
+    marginBottom: 24,
+    textAlign: 'center',
+  },
+  errorInstructions: {
+    fontSize: 14,
+    color: '#333',
+    backgroundColor: '#fff3cd',
+    padding: 16,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#ffc107',
+    lineHeight: 22,
+  },
 });
+
