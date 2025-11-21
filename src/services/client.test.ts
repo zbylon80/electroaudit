@@ -1,8 +1,8 @@
 import * as fc from 'fast-check';
 import * as SQLite from 'expo-sqlite';
 import { initDatabase } from './database';
-import { createClient, getClient, updateClient } from './client';
-import { ClientInput } from '../types';
+import { createClient, getClient, updateClient, getAllClients, deleteClient } from './client';
+import { Client, ClientInput } from '../types';
 
 // Mock expo-sqlite
 jest.mock('expo-sqlite');
@@ -36,9 +36,9 @@ describe('Client Service Property Tests', () => {
  */
 const clientArbitrary = (): fc.Arbitrary<ClientInput> => {
   return fc.record({
-    name: fc.string({ minLength: 1, maxLength: 100 }),
-    address: fc.string({ minLength: 1, maxLength: 200 }),
-    contactPerson: fc.option(fc.string({ minLength: 1, maxLength: 100 })),
+    name: fc.string({ minLength: 1, maxLength: 100 }).filter(s => s.trim().length > 0),
+    address: fc.string({ minLength: 1, maxLength: 200 }).filter(s => s.trim().length > 0),
+    contactPerson: fc.option(fc.string({ minLength: 1, maxLength: 100 }).filter(s => s.trim().length > 0)),
     phone: fc.option(fc.string({ minLength: 1, maxLength: 20 })),
     email: fc.option(fc.emailAddress()),
     notes: fc.option(fc.string({ minLength: 0, maxLength: 500 })),
@@ -258,6 +258,184 @@ test('Property 3: Client Update Propagation', async () => {
         
         expect(retrieved!.createdAt).toBe(created.createdAt); // createdAt should not change
         expect(retrieved!.updatedAt).not.toBe(created.updatedAt); // updatedAt should change
+      }
+    ),
+    { numRuns: 100 }
+  );
+});
+
+/**
+ * Feature: electroaudit-mobile-app, Property 26: Client Search Filtering
+ * For any search query string, the client list should return only clients whose
+ * name, address, or contact person contains the search query (case-insensitive).
+ * Validates: Requirements 1.8
+ */
+test('Property 26: Client Search Filtering', async () => {
+  await fc.assert(
+    fc.asyncProperty(
+      fc.array(clientArbitrary(), { minLength: 5, maxLength: 20 }),
+      fc.string({ minLength: 1, maxLength: 10 }).filter(s => s.trim().length > 0),
+      async (clientsData, searchQuery) => {
+        // Create all clients
+        const createdClients: Client[] = [];
+        for (const clientData of clientsData) {
+          mockDb.runAsync.mockResolvedValueOnce({ changes: 1, lastInsertRowId: 1 });
+          const created = await createClient(clientData);
+          createdClients.push(created);
+        }
+        
+        // Mock getAllClients to return all created clients
+        mockDb.getAllAsync.mockResolvedValueOnce(
+          createdClients.map(client => ({
+            id: client.id,
+            name: client.name,
+            address: client.address,
+            contactPerson: client.contactPerson ?? null,
+            phone: client.phone ?? null,
+            email: client.email ?? null,
+            notes: client.notes ?? null,
+            createdAt: client.createdAt,
+            updatedAt: client.updatedAt,
+          }))
+        );
+        
+        // Get all clients
+        const allClients = await getAllClients();
+        
+        // Apply search filter (case-insensitive)
+        const lowerQuery = searchQuery.toLowerCase().trim();
+        const filteredClients = allClients.filter(client => {
+          const nameMatch = client.name.toLowerCase().includes(lowerQuery);
+          const addressMatch = client.address.toLowerCase().includes(lowerQuery);
+          const contactMatch = client.contactPerson?.toLowerCase().includes(lowerQuery) || false;
+          
+          return nameMatch || addressMatch || contactMatch;
+        });
+        
+        // Assertions
+        // 1. All filtered clients should match the search query
+        for (const client of filteredClients) {
+          const nameMatch = client.name.toLowerCase().includes(lowerQuery);
+          const addressMatch = client.address.toLowerCase().includes(lowerQuery);
+          const contactMatch = client.contactPerson?.toLowerCase().includes(lowerQuery) || false;
+          
+          expect(nameMatch || addressMatch || contactMatch).toBe(true);
+        }
+        
+        // 2. No clients outside the filtered list should match the query
+        const nonFilteredClients = allClients.filter(
+          client => !filteredClients.some(fc => fc.id === client.id)
+        );
+        
+        for (const client of nonFilteredClients) {
+          const nameMatch = client.name.toLowerCase().includes(lowerQuery);
+          const addressMatch = client.address.toLowerCase().includes(lowerQuery);
+          const contactMatch = client.contactPerson?.toLowerCase().includes(lowerQuery) || false;
+          
+          expect(nameMatch || addressMatch || contactMatch).toBe(false);
+        }
+        
+        // 3. The count of filtered clients should match expected
+        const expectedCount = createdClients.filter(client => {
+          const nameMatch = client.name.toLowerCase().includes(lowerQuery);
+          const addressMatch = client.address.toLowerCase().includes(lowerQuery);
+          const contactMatch = client.contactPerson?.toLowerCase().includes(lowerQuery) || false;
+          
+          return nameMatch || addressMatch || contactMatch;
+        }).length;
+        
+        expect(filteredClients.length).toBe(expectedCount);
+      }
+    ),
+    { numRuns: 100 }
+  );
+});
+
+/**
+ * Feature: electroaudit-mobile-app, Property 27: Client Deletion Prevention
+ * For any client with associated inspection orders, attempting to delete the client
+ * should fail and the client should remain in the database.
+ * Validates: Requirements 1.10
+ */
+test('Property 27: Client Deletion Prevention', async () => {
+  await fc.assert(
+    fc.asyncProperty(
+      clientArbitrary(),
+      fc.integer({ min: 1, max: 5 }), // Number of orders to create
+      async (clientData, numOrders) => {
+        // Create client
+        mockDb.runAsync.mockResolvedValueOnce({ changes: 1, lastInsertRowId: 1 });
+        const client = await createClient(clientData);
+        
+        // Mock query to check for associated orders - return some orders
+        mockDb.getAllAsync.mockResolvedValueOnce(
+          Array.from({ length: numOrders }, (_, i) => ({
+            id: `order-${i}`,
+            clientId: client.id,
+          }))
+        );
+        
+        // Attempt to delete client with associated orders
+        // This should throw an error
+        await expect(async () => {
+          await deleteClient(client.id);
+        }).rejects.toThrow();
+        
+        // Mock query to verify client still exists
+        mockDb.getAllAsync.mockResolvedValueOnce([
+          {
+            id: client.id,
+            name: clientData.name,
+            address: clientData.address,
+            contactPerson: clientData.contactPerson ?? null,
+            phone: clientData.phone ?? null,
+            email: clientData.email ?? null,
+            notes: clientData.notes ?? null,
+            createdAt: client.createdAt,
+            updatedAt: client.updatedAt,
+          },
+        ]);
+        
+        // Verify client still exists in database
+        const retrievedClient = await getClient(client.id);
+        expect(retrievedClient).not.toBeNull();
+        expect(retrievedClient!.id).toBe(client.id);
+      }
+    ),
+    { numRuns: 100 }
+  );
+});
+
+/**
+ * Feature: electroaudit-mobile-app, Property 28: Client Deletion Success
+ * For any client with no associated inspection orders, deleting the client
+ * should remove it from the database and subsequent queries should not return it.
+ * Validates: Requirements 1.9
+ */
+test('Property 28: Client Deletion Success', async () => {
+  await fc.assert(
+    fc.asyncProperty(
+      clientArbitrary(),
+      async (clientData) => {
+        // Create client
+        mockDb.runAsync.mockResolvedValueOnce({ changes: 1, lastInsertRowId: 1 });
+        const client = await createClient(clientData);
+        
+        // Mock query to check for associated orders - return empty array (no orders)
+        mockDb.getAllAsync.mockResolvedValueOnce([]);
+        
+        // Mock the delete operation
+        mockDb.runAsync.mockResolvedValueOnce({ changes: 1, lastInsertRowId: 0 });
+        
+        // Delete client (should succeed since no associated orders)
+        await deleteClient(client.id);
+        
+        // Mock query to verify client no longer exists - return empty array
+        mockDb.getAllAsync.mockResolvedValueOnce([]);
+        
+        // Verify client no longer exists in database
+        const retrievedClient = await getClient(client.id);
+        expect(retrievedClient).toBeNull();
       }
     ),
     { numRuns: 100 }

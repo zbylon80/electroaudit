@@ -143,9 +143,20 @@ export const updateClient = async (id: string, clientData: ClientInput): Promise
 /**
  * Delete a client
  * @param id - Client ID
+ * @throws Error if client has associated inspection orders
  */
 export const deleteClient = async (id: string): Promise<void> => {
   try {
+    // Check if client has associated orders (Requirement 1.10)
+    const orders = await querySql(
+      'SELECT id FROM inspection_orders WHERE clientId = ?',
+      [id]
+    );
+    
+    if (orders.length > 0) {
+      throw new Error('Cannot delete client with associated inspection orders');
+    }
+    
     await executeSql('DELETE FROM clients WHERE id = ?', [id]);
   } catch (error) {
     console.error('Error deleting client:', error);
