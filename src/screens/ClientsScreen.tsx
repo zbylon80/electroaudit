@@ -1,13 +1,13 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { View, FlatList, StyleSheet, RefreshControl, Platform, Alert, TextInput as RNTextInput } from 'react-native';
-import { FAB, Text, IconButton } from 'react-native-paper';
+import { FAB, Text, IconButton, Dialog, Portal, Paragraph } from 'react-native-paper';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { RootStackParamList } from '../navigation/types';
 import { Client } from '../types';
 import { getAllClients, deleteClient } from '../services/client';
 import { getAllOrders } from '../services/order';
-import { Card, EmptyState } from '../components';
+import { Card, EmptyState, Button } from '../components';
 import { 
   webGetAllClients, 
   webDeleteClient, 
@@ -24,6 +24,9 @@ export const ClientsScreen: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [refreshing, setRefreshing] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [deleteDialogVisible, setDeleteDialogVisible] = useState(false);
+  const [warningDialogVisible, setWarningDialogVisible] = useState(false);
+  const [clientToDelete, setClientToDelete] = useState<{ id: string; name: string } | null>(null);
   const isWeb = Platform.OS === 'web';
 
   const loadClients = async () => {
@@ -99,47 +102,58 @@ export const ClientsScreen: React.FC = () => {
       }
 
       if (hasOrders) {
-        // Prevent deletion - show warning message
-        Alert.alert(
-          'Cannot Delete Client',
-          `Cannot delete "${clientName}" because they have associated inspection orders. Please delete or reassign the orders first.`,
-          [{ text: 'OK' }]
-        );
+        // Prevent deletion - show warning dialog
+        setClientToDelete({ id: clientId, name: clientName });
+        setWarningDialogVisible(true);
         return;
       }
 
       // Show confirmation dialog
-      Alert.alert(
-        'Delete Client',
-        `Are you sure you want to delete "${clientName}"?`,
-        [
-          {
-            text: 'Cancel',
-            style: 'cancel',
-          },
-          {
-            text: 'Delete',
-            style: 'destructive',
-            onPress: async () => {
-              try {
-                if (isWeb) {
-                  webDeleteClient(clientId);
-                } else {
-                  await deleteClient(clientId);
-                }
-                await loadClients();
-              } catch (error) {
-                console.error('Error deleting client:', error);
-                Alert.alert('Error', 'Failed to delete client. Please try again.');
-              }
-            },
-          },
-        ]
-      );
+      setClientToDelete({ id: clientId, name: clientName });
+      setDeleteDialogVisible(true);
     } catch (error) {
       console.error('Error checking client orders:', error);
-      Alert.alert('Error', 'Failed to check client orders. Please try again.');
+      if (isWeb) {
+        window.alert('Failed to check client orders. Please try again.');
+      } else {
+        Alert.alert('Error', 'Failed to check client orders. Please try again.');
+      }
     }
+  };
+
+  const confirmDeleteClient = async () => {
+    if (!clientToDelete) return;
+
+    try {
+      if (isWeb) {
+        webDeleteClient(clientToDelete.id);
+      } else {
+        await deleteClient(clientToDelete.id);
+      }
+      await loadClients();
+      setDeleteDialogVisible(false);
+      setClientToDelete(null);
+    } catch (error) {
+      console.error('Error deleting client:', error);
+      setDeleteDialogVisible(false);
+      setClientToDelete(null);
+      
+      if (isWeb) {
+        window.alert('Failed to delete client. Please try again.');
+      } else {
+        Alert.alert('Error', 'Failed to delete client. Please try again.');
+      }
+    }
+  };
+
+  const cancelDeleteClient = () => {
+    setDeleteDialogVisible(false);
+    setClientToDelete(null);
+  };
+
+  const closeWarningDialog = () => {
+    setWarningDialogVisible(false);
+    setClientToDelete(null);
   };
 
   // Load clients when screen comes into focus
@@ -239,6 +253,43 @@ export const ClientsScreen: React.FC = () => {
         onPress={handleAddClient}
         label="Add Client"
       />
+
+      {/* Delete confirmation dialog */}
+      <Portal>
+        <Dialog visible={deleteDialogVisible} onDismiss={cancelDeleteClient}>
+          <Dialog.Title>Usuń Klienta</Dialog.Title>
+          <Dialog.Content>
+            <Paragraph>
+              Czy na pewno chcesz usunąć klienta "{clientToDelete?.name}"?
+            </Paragraph>
+          </Dialog.Content>
+          <Dialog.Actions>
+            <Button mode="text" onPress={cancelDeleteClient}>
+              Anuluj
+            </Button>
+            <Button mode="text" onPress={confirmDeleteClient}>
+              Usuń
+            </Button>
+          </Dialog.Actions>
+        </Dialog>
+      </Portal>
+
+      {/* Warning dialog for clients with orders */}
+      <Portal>
+        <Dialog visible={warningDialogVisible} onDismiss={closeWarningDialog}>
+          <Dialog.Title>Nie można usunąć klienta</Dialog.Title>
+          <Dialog.Content>
+            <Paragraph>
+              Nie można usunąć klienta "{clientToDelete?.name}", ponieważ ma przypisane zlecenia inspekcji. Najpierw usuń lub przypisz zlecenia do innego klienta.
+            </Paragraph>
+          </Dialog.Content>
+          <Dialog.Actions>
+            <Button mode="text" onPress={closeWarningDialog}>
+              OK
+            </Button>
+          </Dialog.Actions>
+        </Dialog>
+      </Portal>
     </View>
   );
 };
