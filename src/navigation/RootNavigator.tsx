@@ -2,7 +2,7 @@ import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { Text } from 'react-native';
+import { Icon } from 'react-native-paper';
 import { RootStackParamList } from './types';
 import {
   OrdersScreen,
@@ -40,6 +40,9 @@ const MainTabs: React.FC = () => {
         options={{
           title: 'Inspection Orders',
           tabBarLabel: 'Orders',
+          tabBarIcon: ({ color, size }) => (
+            <Icon source="clipboard-text" size={size} color={color} />
+          ),
         }}
       />
       <Tab.Screen
@@ -48,6 +51,9 @@ const MainTabs: React.FC = () => {
         options={{
           title: 'Clients',
           tabBarLabel: 'Clients',
+          tabBarIcon: ({ color, size }) => (
+            <Icon source="account-group" size={size} color={color} />
+          ),
         }}
       />
     </Tab.Navigator>
