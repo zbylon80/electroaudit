@@ -14,6 +14,7 @@ import {
   webGetAllOrders,
   initWebStorage 
 } from '../services/webStorage';
+import { translations as t } from '../constants';
 
 type ClientsScreenNavigationProp = StackNavigationProp<RootStackParamList, 'ClientsScreen'>;
 
@@ -139,9 +140,9 @@ export const ClientsScreen: React.FC = () => {
       setClientToDelete(null);
       
       if (isWeb) {
-        window.alert('Failed to delete client. Please try again.');
+        window.alert(t.errors.cannotDelete + '. ' + 'Spróbuj ponownie.');
       } else {
-        Alert.alert('Error', 'Failed to delete client. Please try again.');
+        Alert.alert(t.common.error, t.errors.cannotDelete + '. ' + 'Spróbuj ponownie.');
       }
     }
   };
@@ -204,7 +205,7 @@ export const ClientsScreen: React.FC = () => {
       <View style={styles.searchContainer}>
         <RNTextInput
           style={styles.searchInput}
-          placeholder="Search by name, address, or contact person..."
+          placeholder={t.screens.clients.searchPlaceholder}
           value={searchQuery}
           onChangeText={handleSearchChange}
           placeholderTextColor="#999"
@@ -223,15 +224,15 @@ export const ClientsScreen: React.FC = () => {
       {filteredClients.length === 0 ? (
         <View style={styles.emptyContainer}>
           <EmptyState
-            title={searchQuery ? 'No Clients Found' : 'No Clients'}
+            title={searchQuery ? 'Nie znaleziono klientów' : t.screens.clients.noClients}
             message={
               searchQuery
-                ? `No clients match "${searchQuery}"`
-                : 'Create your first client to get started'
+                ? `Brak klientów pasujących do "${searchQuery}"`
+                : t.screens.clients.noClientsDescription
             }
-            actionLabel={searchQuery ? undefined : 'Add Client'}
+            actionLabel={searchQuery ? undefined : t.screens.clients.addClient}
             onAction={searchQuery ? undefined : handleAddClient}
-            icon={searchQuery ? 'magnify' : 'plus'}
+            icon={searchQuery ? 'magnify' : 'account-off'}
           />
         </View>
       ) : (
@@ -246,13 +247,15 @@ export const ClientsScreen: React.FC = () => {
         />
       )}
 
-      {/* Floating Action Button */}
-      <FAB
-        icon="plus"
-        style={styles.fab}
-        onPress={handleAddClient}
-        label="Add Client"
-      />
+      {/* Floating Action Button - only show when there are clients */}
+      {clients.length > 0 && (
+        <FAB
+          icon="plus"
+          style={styles.fab}
+          onPress={handleAddClient}
+          label={t.screens.clients.addClient}
+        />
+      )}
 
       {/* Delete confirmation dialog */}
       <Portal>

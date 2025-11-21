@@ -22,6 +22,7 @@ import {
   initWebStorage 
 } from '../services/webStorage';
 import { validateNumeric, validateRange } from '../utils/validators';
+import { translations as t } from '../constants';
 
 type MeasurementFormScreenRouteProp = RouteProp<RootStackParamList, 'MeasurementFormScreen'>;
 type MeasurementFormScreenNavigationProp = StackNavigationProp<RootStackParamList, 'MeasurementFormScreen'>;
@@ -78,6 +79,28 @@ export const MeasurementFormScreen: React.FC = () => {
   const [order, setOrder] = useState<InspectionOrder | null>(null);
   const [point, setPoint] = useState<MeasurementPoint | null>(null);
   const isWeb = Platform.OS === 'web';
+
+  // Helper function to get translated point type label
+  const getPointTypeLabel = (type: string): string => {
+    switch (type) {
+      case 'socket_1p':
+        return t.pointTypes.socket_1p;
+      case 'socket_3p':
+        return t.pointTypes.socket_3p;
+      case 'lighting':
+        return t.pointTypes.lighting;
+      case 'rcd':
+        return t.pointTypes.rcd;
+      case 'earthing':
+        return t.pointTypes.earthing;
+      case 'lps':
+        return t.pointTypes.lps;
+      case 'other':
+        return t.pointTypes.other;
+      default:
+        return type;
+    }
+  };
 
   const {
     control,
@@ -313,7 +336,7 @@ export const MeasurementFormScreen: React.FC = () => {
 
   // RCD Type picker items
   const rcdTypeItems: PickerItem[] = [
-    { label: 'Select RCD Type', value: '' },
+    { label: 'Wybierz typ RCD', value: '' },
     { label: 'AC', value: 'AC' },
     { label: 'A', value: 'A' },
     { label: 'F', value: 'F' },
@@ -377,14 +400,14 @@ export const MeasurementFormScreen: React.FC = () => {
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer}>
       <View style={styles.header}>
-        <Text style={styles.headerText}>Measurement Point: {point.label}</Text>
-        <Text style={styles.subHeaderText}>Type: {point.type}</Text>
+        <Text style={styles.headerText}>{t.navigation.points}: {point.label}</Text>
+        <Text style={styles.subHeaderText}>{t.fields.type}: {getPointTypeLabel(point.type)}</Text>
       </View>
 
       <View style={styles.form}>
         {/* Loop Impedance Section */}
         {order.measureLoopImpedance && isRelevantForPointType('loopImpedance') && (
-          <FormSection title="Loop Impedance">
+          <FormSection title={t.measurementTypes.loopImpedance}>
             <Controller
               control={control}
               name="loopImpedance"
@@ -398,11 +421,11 @@ export const MeasurementFormScreen: React.FC = () => {
               }}
               render={({ field: { onChange, value } }) => (
                 <FormField
-                  label="Loop Impedance (Ω)"
+                  label={t.measurements.loopImpedance}
                   value={value ?? ''}
                   onChangeText={onChange}
                   error={errors.loopImpedance?.message}
-                  placeholder="Enter loop impedance"
+                  placeholder={t.measurements.enterLoopImpedance}
                   keyboardType="numeric"
                 />
               )}
@@ -412,7 +435,7 @@ export const MeasurementFormScreen: React.FC = () => {
               name="loopResultPass"
               render={({ field: { onChange, value } }) => (
                 <Switch
-                  label="Loop Result Pass"
+                  label={t.measurements.loopResultPass}
                   value={value ?? false}
                   onValueChange={onChange}
                 />
@@ -423,7 +446,7 @@ export const MeasurementFormScreen: React.FC = () => {
 
         {/* Insulation Section */}
         {order.measureInsulation && isRelevantForPointType('insulation') && (
-          <FormSection title="Insulation Resistance">
+          <FormSection title={t.measurementTypes.insulation}>
             <Controller
               control={control}
               name="insulationLn"
@@ -441,7 +464,7 @@ export const MeasurementFormScreen: React.FC = () => {
                   value={value ?? ''}
                   onChangeText={onChange}
                   error={errors.insulationLn?.message}
-                  placeholder="Enter L-N insulation"
+                  placeholder={t.measurements.enterInsulationLN}
                   keyboardType="numeric"
                 />
               )}
@@ -463,7 +486,7 @@ export const MeasurementFormScreen: React.FC = () => {
                   value={value ?? ''}
                   onChangeText={onChange}
                   error={errors.insulationLpe?.message}
-                  placeholder="Enter L-PE insulation"
+                  placeholder={t.measurements.enterInsulationLPE}
                   keyboardType="numeric"
                 />
               )}
@@ -485,7 +508,7 @@ export const MeasurementFormScreen: React.FC = () => {
                   value={value ?? ''}
                   onChangeText={onChange}
                   error={errors.insulationNpe?.message}
-                  placeholder="Enter N-PE insulation"
+                  placeholder={t.measurements.enterInsulationNPE}
                   keyboardType="numeric"
                 />
               )}
@@ -495,7 +518,7 @@ export const MeasurementFormScreen: React.FC = () => {
               name="insulationResultPass"
               render={({ field: { onChange, value } }) => (
                 <Switch
-                  label="Insulation Result Pass"
+                  label={t.measurements.insulationResultPass}
                   value={value ?? false}
                   onValueChange={onChange}
                 />
@@ -512,11 +535,11 @@ export const MeasurementFormScreen: React.FC = () => {
               name="rcdType"
               render={({ field: { onChange, value } }) => (
                 <Picker
-                  label="RCD Type"
+                  label={t.measurements.rcdType}
                   value={value ?? ''}
                   items={rcdTypeItems}
                   onValueChange={onChange}
-                  placeholder="Select RCD type"
+                  placeholder={t.measurements.selectRcdType}
                 />
               )}
             />
@@ -533,11 +556,11 @@ export const MeasurementFormScreen: React.FC = () => {
               }}
               render={({ field: { onChange, value } }) => (
                 <FormField
-                  label="Rated Current (mA)"
+                  label={t.measurements.rcdRatedCurrent}
                   value={value ?? ''}
                   onChangeText={onChange}
                   error={errors.rcdRatedCurrent?.message}
-                  placeholder="Enter rated current"
+                  placeholder={t.measurements.enterRatedCurrent}
                   keyboardType="numeric"
                 />
               )}
@@ -555,11 +578,11 @@ export const MeasurementFormScreen: React.FC = () => {
               }}
               render={({ field: { onChange, value } }) => (
                 <FormField
-                  label="Time 1x (ms)"
+                  label={t.measurements.rcdTime1x}
                   value={value ?? ''}
                   onChangeText={onChange}
                   error={errors.rcdTime1x?.message}
-                  placeholder="Enter time at 1x"
+                  placeholder={t.measurements.enterTimeAt1x}
                   keyboardType="numeric"
                 />
               )}
@@ -577,11 +600,11 @@ export const MeasurementFormScreen: React.FC = () => {
               }}
               render={({ field: { onChange, value } }) => (
                 <FormField
-                  label="Time 5x (ms)"
+                  label={t.measurements.rcdTime5x}
                   value={value ?? ''}
                   onChangeText={onChange}
                   error={errors.rcdTime5x?.message}
-                  placeholder="Enter time at 5x"
+                  placeholder={t.measurements.enterTimeAt5x}
                   keyboardType="numeric"
                 />
               )}
@@ -591,7 +614,7 @@ export const MeasurementFormScreen: React.FC = () => {
               name="rcdResultPass"
               render={({ field: { onChange, value } }) => (
                 <Switch
-                  label="RCD Result Pass"
+                  label={t.measurements.rcdResultPass}
                   value={value ?? false}
                   onValueChange={onChange}
                 />
@@ -602,7 +625,7 @@ export const MeasurementFormScreen: React.FC = () => {
 
         {/* PE Continuity Section */}
         {order.measurePeContinuity && isRelevantForPointType('peContinuity') && (
-          <FormSection title="PE Continuity">
+          <FormSection title={t.measurementTypes.peContinuity}>
             <Controller
               control={control}
               name="peResistance"
@@ -616,11 +639,11 @@ export const MeasurementFormScreen: React.FC = () => {
               }}
               render={({ field: { onChange, value } }) => (
                 <FormField
-                  label="PE Resistance (Ω)"
+                  label={t.measurements.peResistance}
                   value={value ?? ''}
                   onChangeText={onChange}
                   error={errors.peResistance?.message}
-                  placeholder="Enter PE resistance"
+                  placeholder={t.measurements.enterPeResistance}
                   keyboardType="numeric"
                 />
               )}
@@ -630,7 +653,7 @@ export const MeasurementFormScreen: React.FC = () => {
               name="peResultPass"
               render={({ field: { onChange, value } }) => (
                 <Switch
-                  label="PE Result Pass"
+                  label={t.measurements.peResultPass}
                   value={value ?? false}
                   onValueChange={onChange}
                 />
@@ -655,11 +678,11 @@ export const MeasurementFormScreen: React.FC = () => {
               }}
               render={({ field: { onChange, value } }) => (
                 <FormField
-                  label="Earthing Resistance (Ω)"
+                  label={t.measurements.earthingResistance}
                   value={value ?? ''}
                   onChangeText={onChange}
                   error={errors.earthingResistance?.message}
-                  placeholder="Enter earthing resistance"
+                  placeholder={t.measurements.enterEarthingResistance}
                   keyboardType="numeric"
                 />
               )}
@@ -669,7 +692,7 @@ export const MeasurementFormScreen: React.FC = () => {
               name="earthingResultPass"
               render={({ field: { onChange, value } }) => (
                 <Switch
-                  label="Earthing Result Pass"
+                  label={t.measurements.earthingResultPass}
                   value={value ?? false}
                   onValueChange={onChange}
                 />
@@ -681,14 +704,14 @@ export const MeasurementFormScreen: React.FC = () => {
         {/* Polarity/Phase Section */}
         {(order.measurePolarity || order.measurePhaseSequence) && 
          (isRelevantForPointType('polarity') || isRelevantForPointType('phaseSequence')) && (
-          <FormSection title="Polarity & Phase Sequence">
+          <FormSection title={t.measurementTypes.polarityAndPhaseSequence}>
             {order.measurePolarity && isRelevantForPointType('polarity') && (
               <Controller
                 control={control}
                 name="polarityOk"
                 render={({ field: { onChange, value } }) => (
                   <Switch
-                    label="Polarity OK"
+                    label={t.measurements.polarityOk}
                     value={value ?? false}
                     onValueChange={onChange}
                   />
@@ -701,7 +724,7 @@ export const MeasurementFormScreen: React.FC = () => {
                 name="phaseSequenceOk"
                 render={({ field: { onChange, value } }) => (
                   <Switch
-                    label="Phase Sequence OK"
+                    label={t.measurements.phaseSequenceOk}
                     value={value ?? false}
                     onValueChange={onChange}
                   />
@@ -713,13 +736,13 @@ export const MeasurementFormScreen: React.FC = () => {
 
         {/* Breakers Section */}
         {order.measureBreakersCheck && isRelevantForPointType('breakers') && (
-          <FormSection title="Breakers Check">
+          <FormSection title={t.measurementTypes.breakersCheck}>
             <Controller
               control={control}
               name="breakerCheckOk"
               render={({ field: { onChange, value } }) => (
                 <Switch
-                  label="Breaker Check OK"
+                  label={t.measurements.breakerCheckOk}
                   value={value ?? false}
                   onValueChange={onChange}
                 />
@@ -730,7 +753,7 @@ export const MeasurementFormScreen: React.FC = () => {
 
         {/* LPS Section */}
         {order.measureLps && isRelevantForPointType('lps') && (
-          <FormSection title="Lightning Protection System (LPS)">
+          <FormSection title={t.measurementTypes.lps}>
             <Controller
               control={control}
               name="lpsEarthingResistance"
@@ -744,11 +767,11 @@ export const MeasurementFormScreen: React.FC = () => {
               }}
               render={({ field: { onChange, value } }) => (
                 <FormField
-                  label="LPS Earthing Resistance (Ω)"
+                  label={t.measurements.lpsEarthingResistance}
                   value={value ?? ''}
                   onChangeText={onChange}
                   error={errors.lpsEarthingResistance?.message}
-                  placeholder="Enter LPS earthing resistance"
+                  placeholder={t.measurements.enterLpsEarthingResistance}
                   keyboardType="numeric"
                 />
               )}
@@ -758,7 +781,7 @@ export const MeasurementFormScreen: React.FC = () => {
               name="lpsContinuityOk"
               render={({ field: { onChange, value } }) => (
                 <Switch
-                  label="LPS Continuity OK"
+                  label={t.measurements.lpsContinuityOk}
                   value={value ?? false}
                   onValueChange={onChange}
                 />
@@ -769,7 +792,7 @@ export const MeasurementFormScreen: React.FC = () => {
               name="lpsVisualOk"
               render={({ field: { onChange, value } }) => (
                 <Switch
-                  label="LPS Visual OK"
+                  label={t.measurements.lpsVisualOk}
                   value={value ?? false}
                   onValueChange={onChange}
                 />
@@ -779,16 +802,16 @@ export const MeasurementFormScreen: React.FC = () => {
         )}
 
         {/* Comments Section - Always visible */}
-        <FormSection title="Comments">
+        <FormSection title={t.fields.comments}>
           <Controller
             control={control}
             name="comments"
             render={({ field: { onChange, value } }) => (
               <FormField
-                label="Comments"
+                label={t.fields.comments}
                 value={value ?? ''}
                 onChangeText={onChange}
-                placeholder="Enter any additional comments (max 200 characters)"
+                placeholder={t.placeholders.enterAdditionalNotesMax200}
                 multiline
                 numberOfLines={4}
                 maxLength={200}
@@ -803,7 +826,7 @@ export const MeasurementFormScreen: React.FC = () => {
           loading={loading}
           style={styles.saveButton}
         >
-          Save Measurement
+          {t.measurements.saveMeasurement}
         </Button>
       </View>
     </ScrollView>

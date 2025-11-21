@@ -13,6 +13,7 @@ import { validateRequired, validateEmail } from '../utils/validators';
 import { v4 as uuidv4 } from 'uuid';
 import { useNotification } from '../contexts/NotificationContext';
 import { getErrorMessage } from '../utils/errorHandler';
+import { translations as t } from '../constants';
 
 type ClientFormScreenRouteProp = RouteProp<RootStackParamList, 'ClientFormScreen'>;
 type ClientFormScreenNavigationProp = StackNavigationProp<RootStackParamList, 'ClientFormScreen'>;
@@ -164,11 +165,11 @@ export const ClientFormScreen: React.FC = () => {
           }}
           render={({ field: { onChange, value } }) => (
             <FormField
-              label="Name"
+              label={t.fields.name}
               value={value}
               onChangeText={onChange}
               error={errors.name?.message}
-              placeholder="Enter client name"
+              placeholder={t.placeholders.enterName}
               required
             />
           )}
@@ -182,11 +183,11 @@ export const ClientFormScreen: React.FC = () => {
           }}
           render={({ field: { onChange, value } }) => (
             <FormField
-              label="Address"
+              label={t.fields.address}
               value={value}
               onChangeText={onChange}
               error={errors.address?.message}
-              placeholder="Enter client address"
+              placeholder={t.placeholders.enterAddress}
               multiline
               numberOfLines={2}
               required
@@ -199,11 +200,11 @@ export const ClientFormScreen: React.FC = () => {
           name="contactPerson"
           render={({ field: { onChange, value } }) => (
             <FormField
-              label="Contact Person"
+              label={t.fields.contactPerson}
               value={value}
               onChangeText={onChange}
               error={errors.contactPerson?.message}
-              placeholder="Enter contact person name"
+              placeholder={t.placeholders.enterContactPerson}
             />
           )}
         />
@@ -213,11 +214,11 @@ export const ClientFormScreen: React.FC = () => {
           name="phone"
           render={({ field: { onChange, value } }) => (
             <FormField
-              label="Phone"
+              label={t.fields.phone}
               value={value}
               onChangeText={onChange}
               error={errors.phone?.message}
-              placeholder="Enter phone number"
+              placeholder={t.placeholders.enterPhone}
               keyboardType="phone-pad"
             />
           )}
@@ -237,11 +238,11 @@ export const ClientFormScreen: React.FC = () => {
           }}
           render={({ field: { onChange, value } }) => (
             <FormField
-              label="Email"
+              label={t.fields.email}
               value={value}
               onChangeText={onChange}
               error={errors.email?.message}
-              placeholder="Enter email address"
+              placeholder={t.placeholders.enterEmail}
               keyboardType="email-address"
             />
           )}
@@ -252,11 +253,11 @@ export const ClientFormScreen: React.FC = () => {
           name="notes"
           render={({ field: { onChange, value } }) => (
             <FormField
-              label="Notes"
+              label={t.fields.notes}
               value={value}
               onChangeText={onChange}
               error={errors.notes?.message}
-              placeholder="Enter any additional notes"
+              placeholder={t.placeholders.enterNotes}
               multiline
               numberOfLines={4}
             />
@@ -269,7 +270,7 @@ export const ClientFormScreen: React.FC = () => {
           loading={loading}
           style={styles.saveButton}
         >
-          {clientId ? 'Update Client' : 'Save Client'}
+          {clientId ? t.common.save : t.common.save}
         </Button>
       </View>
     </ScrollView>

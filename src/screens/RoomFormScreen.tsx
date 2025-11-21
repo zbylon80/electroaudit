@@ -11,6 +11,7 @@ import { createRoom, updateRoom, getRoom } from '../services/room';
 import { webGetRoom, webCreateRoom, webUpdateRoom, initWebStorage } from '../services/webStorage';
 import { validateRequired } from '../utils/validators';
 import { v4 as uuidv4 } from 'uuid';
+import { translations as t } from '../constants';
 
 type RoomFormScreenRouteProp = RouteProp<RootStackParamList, 'RoomFormScreen'>;
 type RoomFormScreenNavigationProp = StackNavigationProp<RootStackParamList, 'RoomFormScreen'>;
@@ -148,11 +149,11 @@ export const RoomFormScreen: React.FC = () => {
           }}
           render={({ field: { onChange, value } }) => (
             <FormField
-              label="Name"
+              label={t.fields.name}
               value={value}
               onChangeText={onChange}
               error={errors.name?.message}
-              placeholder="Enter room name"
+              placeholder={t.placeholders.enterRoomName}
               required
             />
           )}
@@ -163,11 +164,11 @@ export const RoomFormScreen: React.FC = () => {
           name="notes"
           render={({ field: { onChange, value } }) => (
             <FormField
-              label="Notes"
+              label={t.fields.notes}
               value={value}
               onChangeText={onChange}
               error={errors.notes?.message}
-              placeholder="Enter any additional notes"
+              placeholder={t.placeholders.enterAdditionalNotes}
               multiline
               numberOfLines={4}
             />
@@ -180,7 +181,7 @@ export const RoomFormScreen: React.FC = () => {
           loading={loading}
           style={styles.saveButton}
         >
-          {roomId ? 'Update Room' : 'Save Room'}
+          {t.common.save}
         </Button>
       </View>
     </ScrollView>

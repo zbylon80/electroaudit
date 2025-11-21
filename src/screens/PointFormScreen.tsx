@@ -18,6 +18,7 @@ import {
   webGetPointsByOrder,
   initWebStorage 
 } from '../services/webStorage';
+import { translations as t } from '../constants';
 import { validateRequired } from '../utils/validators';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -252,7 +253,7 @@ export const PointFormScreen: React.FC = () => {
 
   // Prepare room picker items (with "No Room" option)
   const roomItems: PickerItem[] = [
-    { label: 'No Room', value: '' },
+    { label: t.screens.pointForm.noRoom, value: '' },
     ...rooms.map(room => ({
       label: room.name,
       value: room.id,
@@ -278,11 +279,11 @@ export const PointFormScreen: React.FC = () => {
           }}
           render={({ field: { onChange, value } }) => (
             <FormField
-              label="Label"
+              label={t.fields.label}
               value={value}
               onChangeText={onChange}
               error={errors.label?.message}
-              placeholder="Enter measurement point label"
+              placeholder={t.placeholders.enterPointLabel}
               required
             />
           )}
@@ -293,11 +294,11 @@ export const PointFormScreen: React.FC = () => {
           name="type"
           render={({ field: { onChange, value } }) => (
             <Picker
-              label="Type"
+              label={t.fields.type}
               value={value}
               items={typeItems}
               onValueChange={onChange}
-              placeholder="Select point type"
+              placeholder={t.placeholders.selectPointType}
             />
           )}
         />
@@ -307,11 +308,11 @@ export const PointFormScreen: React.FC = () => {
           name="roomId"
           render={({ field: { onChange, value } }) => (
             <Picker
-              label="Room (Optional)"
+              label={`${t.fields.room} (${t.common.optional})`}
               value={value}
               items={roomItems}
               onValueChange={onChange}
-              placeholder="Select room"
+              placeholder={t.placeholders.selectRoom}
             />
           )}
         />
@@ -321,11 +322,11 @@ export const PointFormScreen: React.FC = () => {
           name="circuitSymbol"
           render={({ field: { onChange, value } }) => (
             <FormField
-              label="Circuit Symbol"
+              label={t.fields.circuitSymbol}
               value={value}
               onChangeText={onChange}
               error={errors.circuitSymbol?.message}
-              placeholder="Enter circuit symbol"
+              placeholder={t.placeholders.enterCircuitSymbol}
             />
           )}
         />
@@ -335,11 +336,11 @@ export const PointFormScreen: React.FC = () => {
           name="notes"
           render={({ field: { onChange, value } }) => (
             <FormField
-              label="Notes"
+              label={t.fields.notes}
               value={value}
               onChangeText={onChange}
               error={errors.notes?.message}
-              placeholder="Enter any additional notes (max 200 characters)"
+              placeholder={t.placeholders.enterAdditionalNotesMax200}
               multiline
               numberOfLines={4}
               maxLength={200}
@@ -353,7 +354,7 @@ export const PointFormScreen: React.FC = () => {
           loading={loading}
           style={styles.saveButton}
         >
-          {pointId ? 'Update Point' : 'Save Point'}
+          {t.common.save}
         </Button>
       </View>
     </ScrollView>

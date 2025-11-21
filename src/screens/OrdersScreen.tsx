@@ -21,6 +21,7 @@ import {
 } from '../services/webStorage';
 import { OrderStatus as OrderStatusEnum, PointType } from '../types';
 import { generateUUID } from '../utils';
+import { translations as t } from '../constants';
 
 type OrdersScreenNavigationProp = StackNavigationProp<RootStackParamList, 'OrdersScreen'>;
 
@@ -618,20 +619,20 @@ export const OrdersScreen: React.FC = () => {
   const getStatusLabel = (status: OrderStatus): string => {
     switch (status) {
       case OrderStatus.DRAFT:
-        return 'Draft';
+        return t.orderStatus.draft;
       case OrderStatus.IN_PROGRESS:
-        return 'In Progress';
+        return t.orderStatus.in_progress;
       case OrderStatus.DONE:
-        return 'Done';
+        return t.orderStatus.done;
       default:
         return status;
     }
   };
 
   const formatDate = (dateString?: string): string => {
-    if (!dateString) return 'No date';
+    if (!dateString) return 'Brak daty';
     const date = new Date(dateString);
-    return date.toLocaleDateString();
+    return date.toLocaleDateString('pl-PL');
   };
 
   const renderOrderCard = ({ item }: { item: OrderWithClient }) => (
@@ -650,11 +651,11 @@ export const OrdersScreen: React.FC = () => {
       <Text style={styles.address}>{item.address}</Text>
       <View style={styles.cardFooter}>
         <Text style={styles.dateText}>
-          Created: {formatDate(item.createdAt)}
+          Utworzono: {formatDate(item.createdAt)}
         </Text>
         {item.scheduledDate && (
           <Text style={styles.dateText}>
-            Scheduled: {formatDate(item.scheduledDate)}
+            Planowana: {formatDate(item.scheduledDate)}
           </Text>
         )}
       </View>
@@ -664,7 +665,7 @@ export const OrdersScreen: React.FC = () => {
   if (loading) {
     return (
       <View style={styles.container}>
-        <Text>Loading orders...</Text>
+        <Text>{t.common.loading}</Text>
       </View>
     );
   }
@@ -673,14 +674,14 @@ export const OrdersScreen: React.FC = () => {
     return (
       <View style={styles.container}>
         <View style={styles.errorContainer}>
-          <Text style={styles.errorTitle}>⚠️ Database Error</Text>
+          <Text style={styles.errorTitle}>⚠️ Błąd bazy danych</Text>
           <Text style={styles.errorMessage}>{error}</Text>
           <Text style={styles.errorInstructions}>
-            To fix this:{'\n'}
-            1. Close Expo Go{'\n'}
-            2. Uninstall Expo Go from your device{'\n'}
-            3. Reinstall Expo Go from the app store{'\n'}
-            4. Scan the QR code again
+            Aby naprawić:{'\n'}
+            1. Zamknij Expo Go{'\n'}
+            2. Odinstaluj Expo Go z urządzenia{'\n'}
+            3. Zainstaluj ponownie Expo Go ze sklepu{'\n'}
+            4. Zeskanuj kod QR ponownie
           </Text>
         </View>
       </View>
@@ -696,28 +697,28 @@ export const OrdersScreen: React.FC = () => {
           onPress={() => handleStatusFilter('all')}
           style={styles.filterChip}
         >
-          All ({orders.length})
+          {t.common.all} ({orders.length})
         </Chip>
         <Chip
           selected={selectedStatus === OrderStatus.DRAFT}
           onPress={() => handleStatusFilter(OrderStatus.DRAFT)}
           style={styles.filterChip}
         >
-          Draft ({orders.filter(o => o.status === OrderStatus.DRAFT).length})
+          {t.orderStatus.draft} ({orders.filter(o => o.status === OrderStatus.DRAFT).length})
         </Chip>
         <Chip
           selected={selectedStatus === OrderStatus.IN_PROGRESS}
           onPress={() => handleStatusFilter(OrderStatus.IN_PROGRESS)}
           style={styles.filterChip}
         >
-          In Progress ({orders.filter(o => o.status === OrderStatus.IN_PROGRESS).length})
+          {t.orderStatus.in_progress} ({orders.filter(o => o.status === OrderStatus.IN_PROGRESS).length})
         </Chip>
         <Chip
           selected={selectedStatus === OrderStatus.DONE}
           onPress={() => handleStatusFilter(OrderStatus.DONE)}
           style={styles.filterChip}
         >
-          Done ({orders.filter(o => o.status === OrderStatus.DONE).length})
+          {t.orderStatus.done} ({orders.filter(o => o.status === OrderStatus.DONE).length})
         </Chip>
       </View>
 
@@ -725,13 +726,13 @@ export const OrdersScreen: React.FC = () => {
       {filteredOrders.length === 0 ? (
         <View style={styles.emptyContainer}>
           <EmptyState
-            title="No Orders"
+            title={t.screens.orders.noOrders}
             message={
               selectedStatus === 'all'
-                ? 'Create your first inspection order to get started'
-                : `No orders with status "${getStatusLabel(selectedStatus as OrderStatus)}"`
+                ? t.screens.orders.noOrdersDescription
+                : `Brak zleceń ze statusem "${getStatusLabel(selectedStatus as OrderStatus)}"`
             }
-            actionLabel="Add Order"
+            actionLabel={t.screens.orders.addOrder}
             onAction={handleAddOrder}
             icon="plus"
           />
@@ -755,7 +756,7 @@ export const OrdersScreen: React.FC = () => {
           icon="plus"
           style={styles.fab}
           onPress={handleAddOrder}
-          label="Add Order"
+          label={t.screens.orders.addOrder}
         />
       )}
     </View>

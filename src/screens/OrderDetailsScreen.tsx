@@ -18,6 +18,7 @@ import { Button } from '../components/common/Button';
 import { Picker, PickerItem } from '../components/common/Picker';
 import { FormField } from '../components/forms/FormField';
 import { Switch } from '../components/common/Switch';
+import { translations as t } from '../constants';
 
 type OrderDetailsScreenRouteProp = RouteProp<RootStackParamList, 'OrderDetailsScreen'>;
 type OrderDetailsScreenNavigationProp = StackNavigationProp<RootStackParamList, 'OrderDetailsScreen'>;
@@ -189,35 +190,35 @@ const RoomsTab: React.FC = () => {
       <ScrollView style={styles.scrollView}>
         {/* Quick-add buttons */}
         <View style={styles.quickAddContainer}>
-          <Text style={styles.quickAddTitle}>Quick Add:</Text>
+          <Text style={styles.quickAddTitle}>{t.screens.rooms.quickAdd}:</Text>
           <View style={styles.quickAddButtons}>
             <Button
               mode="outlined"
-              onPress={() => handleQuickAdd('Room')}
+              onPress={() => handleQuickAdd(t.roomTypes.room)}
               style={styles.quickAddButton}
             >
-              Room
+              {t.roomTypes.room}
             </Button>
             <Button
               mode="outlined"
-              onPress={() => handleQuickAdd('Kitchen')}
+              onPress={() => handleQuickAdd(t.roomTypes.kitchen)}
               style={styles.quickAddButton}
             >
-              Kitchen
+              {t.roomTypes.kitchen}
             </Button>
             <Button
               mode="outlined"
-              onPress={() => handleQuickAdd('Bathroom')}
+              onPress={() => handleQuickAdd(t.roomTypes.bathroom)}
               style={styles.quickAddButton}
             >
-              Bathroom
+              {t.roomTypes.bathroom}
             </Button>
             <Button
               mode="outlined"
-              onPress={() => handleQuickAdd('Hallway')}
+              onPress={() => handleQuickAdd(t.roomTypes.hallway)}
               style={styles.quickAddButton}
             >
-              Hallway
+              {t.roomTypes.hallway}
             </Button>
           </View>
         </View>
@@ -225,9 +226,9 @@ const RoomsTab: React.FC = () => {
         {/* Room list */}
         {rooms.length === 0 ? (
           <EmptyState
-            title="No rooms yet"
-            message="Add rooms to organize your measurement points"
-            actionLabel="Add Custom Room"
+            title={t.screens.rooms.noRooms}
+            message={t.screens.rooms.noRoomsDescription}
+            actionLabel={t.screens.rooms.addCustomRoom}
             onAction={handleAddCustomRoom}
             icon="plus"
           />
@@ -246,7 +247,7 @@ const RoomsTab: React.FC = () => {
       {rooms.length > 0 && (
         <FAB
           icon="plus"
-          label="Add Custom Room"
+          label={t.screens.rooms.addCustomRoom}
           style={styles.fab}
           onPress={handleAddCustomRoom}
         />
@@ -255,18 +256,18 @@ const RoomsTab: React.FC = () => {
       {/* Delete confirmation dialog */}
       <Portal>
         <Dialog visible={deleteDialogVisible} onDismiss={cancelDeleteRoom}>
-          <Dialog.Title>Delete Room</Dialog.Title>
+          <Dialog.Title>{t.confirmations.deleteTitle}</Dialog.Title>
           <Dialog.Content>
             <Paragraph>
-              Are you sure you want to delete "{roomToDelete?.name}"? Measurement points in this room will become unassigned.
+              Czy na pewno chcesz usunąć "{roomToDelete?.name}"? Punkty pomiarowe w tym pomieszczeniu staną się nieprzypisane.
             </Paragraph>
           </Dialog.Content>
           <Dialog.Actions>
             <Button mode="text" onPress={cancelDeleteRoom}>
-              Cancel
+              {t.common.cancel}
             </Button>
             <Button mode="text" onPress={confirmDeleteRoom}>
-              Delete
+              {t.common.delete}
             </Button>
           </Dialog.Actions>
         </Dialog>
@@ -400,11 +401,11 @@ const PointsTab: React.FC = () => {
   const getStatusLabel = (status: PointStatus): string => {
     switch (status) {
       case PointStatus.UNMEASURED:
-        return 'Unmeasured';
+        return t.pointStatus.unmeasured;
       case PointStatus.OK:
-        return 'OK';
+        return t.pointStatus.ok;
       case PointStatus.NOT_OK:
-        return 'NOT OK';
+        return t.pointStatus.not_ok;
       default:
         return 'Unknown';
     }
@@ -433,19 +434,19 @@ const PointsTab: React.FC = () => {
   const getTypeLabel = (type: PointType): string => {
     switch (type) {
       case PointType.SOCKET_1P:
-        return 'Socket 1P';
+        return t.pointTypes.socket_1p;
       case PointType.SOCKET_3P:
-        return 'Socket 3P';
+        return t.pointTypes.socket_3p;
       case PointType.LIGHTING:
-        return 'Lighting';
+        return t.pointTypes.lighting;
       case PointType.RCD:
-        return 'RCD';
+        return t.pointTypes.rcd;
       case PointType.EARTHING:
-        return 'Earthing';
+        return t.pointTypes.earthing;
       case PointType.LPS:
-        return 'LPS';
+        return t.pointTypes.lps;
       case PointType.OTHER:
-        return 'Other';
+        return t.pointTypes.other;
       default:
         return type;
     }
@@ -502,7 +503,7 @@ const PointsTab: React.FC = () => {
             {!room && item.roomId === undefined && (
               <>
                 <Text style={styles.pointSeparator}>•</Text>
-                <Text style={styles.pointRoomUnassigned}>Unassigned</Text>
+                <Text style={styles.pointRoomUnassigned}>{t.screens.points.unassigned}</Text>
               </>
             )}
           </View>
@@ -547,13 +548,13 @@ const PointsTab: React.FC = () => {
 
   // Prepare room picker items
   const roomPickerItems: PickerItem[] = [
-    { label: 'All Rooms', value: 'all' },
+    { label: t.screens.points.allRooms, value: 'all' },
     ...rooms.map(room => ({ label: room.name, value: room.id })),
   ];
   
   // Add unassigned option if there are unassigned points
   if (unassignedPoints.length > 0) {
-    roomPickerItems.push({ label: 'Unassigned', value: 'unassigned' });
+    roomPickerItems.push({ label: t.screens.points.unassigned, value: 'unassigned' });
   }
 
   return (
@@ -561,7 +562,7 @@ const PointsTab: React.FC = () => {
       {/* Room selector */}
       <View style={styles.roomSelectorContainer}>
         <Picker
-          label="Filter by Room"
+          label="Filtruj według pomieszczenia"
           value={selectedRoomId}
           items={roomPickerItems}
           onValueChange={setSelectedRoomId}
@@ -572,9 +573,9 @@ const PointsTab: React.FC = () => {
       {/* Points list */}
       {points.length === 0 ? (
         <EmptyState
-          title="No measurement points yet"
-          message="Add measurement points to record electrical test results"
-          actionLabel="Add Point"
+          title={t.screens.points.noPoints}
+          message={t.screens.points.noPointsDescription}
+          actionLabel={t.screens.points.addPoint}
           onAction={handleAddPoint}
           icon="plus"
         />
@@ -595,7 +596,7 @@ const PointsTab: React.FC = () => {
       {points.length > 0 && (
         <FAB
           icon="plus"
-          label="Add Point"
+          label={t.screens.points.addPoint}
           style={styles.fab}
           onPress={handleAddPoint}
         />
@@ -604,18 +605,18 @@ const PointsTab: React.FC = () => {
       {/* Delete confirmation dialog */}
       <Portal>
         <Dialog visible={deleteDialogVisible} onDismiss={cancelDeletePoint}>
-          <Dialog.Title>Delete Measurement Point</Dialog.Title>
+          <Dialog.Title>{t.confirmations.deleteTitle}</Dialog.Title>
           <Dialog.Content>
             <Paragraph>
-              Are you sure you want to delete "{pointToDelete?.label}"? This will also delete any associated measurement results.
+              Czy na pewno chcesz usunąć "{pointToDelete?.label}"? To również usunie wszystkie powiązane wyniki pomiarów.
             </Paragraph>
           </Dialog.Content>
           <Dialog.Actions>
             <Button mode="text" onPress={cancelDeletePoint}>
-              Cancel
+              {t.common.cancel}
             </Button>
             <Button mode="text" onPress={confirmDeletePoint}>
-              Delete
+              {t.common.delete}
             </Button>
           </Dialog.Actions>
         </Dialog>
@@ -744,10 +745,10 @@ const VisualTab: React.FC = () => {
 
         {/* Summary field */}
         <FormField
-          label="Summary"
+          label={t.fields.summary}
           value={summary}
           onChangeText={setSummary}
-          placeholder="Enter visual inspection summary"
+          placeholder={t.placeholders.enterSummary}
           multiline
           numberOfLines={4}
           required
@@ -755,20 +756,20 @@ const VisualTab: React.FC = () => {
 
         {/* Defects Found field */}
         <FormField
-          label="Defects Found"
+          label={t.fields.defectsFound}
           value={defectsFound}
           onChangeText={setDefectsFound}
-          placeholder="Describe any defects found (optional)"
+          placeholder={t.placeholders.enterDefects}
           multiline
           numberOfLines={4}
         />
 
         {/* Recommendations field */}
         <FormField
-          label="Recommendations"
+          label={t.fields.recommendations}
           value={recommendations}
           onChangeText={setRecommendations}
-          placeholder="Enter recommendations (optional)"
+          placeholder={t.placeholders.enterRecommendations}
           multiline
           numberOfLines={4}
         />
@@ -776,7 +777,7 @@ const VisualTab: React.FC = () => {
         {/* Visual Result Pass switch */}
         <View style={styles.switchContainer}>
           <Switch
-            label="Visual Inspection Pass"
+            label={t.fields.pass}
             value={visualResultPass ?? false}
             onValueChange={setVisualResultPass}
           />
@@ -790,7 +791,7 @@ const VisualTab: React.FC = () => {
           loading={saving}
           style={styles.saveButton}
         >
-          Save Visual Inspection
+          {t.common.save}
         </Button>
       </ScrollView>
     </View>
@@ -803,7 +804,7 @@ const ProtocolTab: React.FC = () => {
   const [protocolData, setProtocolData] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
   const [exporting, setExporting] = useState(false);
-  const [inspectorName, setInspectorName] = useState('Inspector Name');
+  const [inspectorName, setInspectorName] = useState('');
   const [signatureDate, setSignatureDate] = useState(new Date().toISOString().split('T')[0]);
   const isWeb = Platform.OS === 'web';
 
@@ -825,9 +826,11 @@ const ProtocolTab: React.FC = () => {
       
       setProtocolData(data);
       
-      // Set inspector name from protocol data or default
-      if (data) {
-        setInspectorName(data.inspector.name || 'Inspector Name');
+      // Set inspector name from protocol data only if it's not empty and not the old default value
+      if (data && data.inspector.name && 
+          data.inspector.name.trim() !== '' && 
+          data.inspector.name !== 'Inspector Name') {
+        setInspectorName(data.inspector.name);
       }
     } catch (err) {
       console.error('Error loading protocol data:', err);
@@ -906,19 +909,19 @@ const ProtocolTab: React.FC = () => {
   const getTypeLabel = (type: string): string => {
     switch (type) {
       case 'socket_1p':
-        return 'Socket 1P';
+        return t.pointTypes.socket_1p;
       case 'socket_3p':
-        return 'Socket 3P';
+        return t.pointTypes.socket_3p;
       case 'lighting':
-        return 'Lighting';
+        return t.pointTypes.lighting;
       case 'rcd':
-        return 'RCD';
+        return t.pointTypes.rcd;
       case 'earthing':
-        return 'Earthing';
+        return t.pointTypes.earthing;
       case 'lps':
-        return 'LPS';
+        return t.pointTypes.lps;
       case 'other':
-        return 'Other';
+        return t.pointTypes.other;
       default:
         return type;
     }
@@ -997,7 +1000,7 @@ const ProtocolTab: React.FC = () => {
   if (error || !protocolData) {
     return (
       <View style={styles.errorContainer}>
-        <Text style={styles.errorText}>{error || 'Failed to load protocol data'}</Text>
+        <Text style={styles.errorText}>{error || 'Nie udało się załadować danych protokołu'}</Text>
       </View>
     );
   }
@@ -1006,97 +1009,97 @@ const ProtocolTab: React.FC = () => {
     <View style={styles.tabContentContainer}>
       <ScrollView style={styles.scrollView}>
         <View style={styles.protocolContainer}>
-          <Text style={styles.protocolTitle}>Electrical Inspection Protocol</Text>
+          <Text style={styles.protocolTitle}>{t.screens.protocol.protocolTitle}</Text>
           
           {/* Inspector Info */}
           <View style={styles.protocolSection}>
-            <Text style={styles.sectionTitle}>Inspector Information</Text>
+            <Text style={styles.sectionTitle}>{t.screens.protocol.inspector}</Text>
             <FormField
-              label="Inspector Name"
+              label="Nazwisko inspektora"
               value={inspectorName}
               onChangeText={setInspectorName}
-              placeholder="Enter inspector name"
+              placeholder="Wprowadź nazwisko inspektora"
             />
             {protocolData.inspector.licenseNumber && (
-              <Text style={styles.protocolText}>License Number: {protocolData.inspector.licenseNumber}</Text>
+              <Text style={styles.protocolText}>{t.screens.protocol.licenseNumber}: {protocolData.inspector.licenseNumber}</Text>
             )}
             {protocolData.inspector.company && (
-              <Text style={styles.protocolText}>Company: {protocolData.inspector.company}</Text>
+              <Text style={styles.protocolText}>{t.screens.protocol.company}: {protocolData.inspector.company}</Text>
             )}
           </View>
 
           {/* Client Info */}
           <View style={styles.protocolSection}>
-            <Text style={styles.sectionTitle}>Client Information</Text>
-            <Text style={styles.protocolText}>Name: {protocolData.client.name}</Text>
-            <Text style={styles.protocolText}>Address: {protocolData.client.address}</Text>
+            <Text style={styles.sectionTitle}>{t.screens.protocol.clientInfo}</Text>
+            <Text style={styles.protocolText}>{t.fields.name}: {protocolData.client.name}</Text>
+            <Text style={styles.protocolText}>{t.fields.address}: {protocolData.client.address}</Text>
             {protocolData.client.contactPerson && (
-              <Text style={styles.protocolText}>Contact Person: {protocolData.client.contactPerson}</Text>
+              <Text style={styles.protocolText}>{t.fields.contactPerson}: {protocolData.client.contactPerson}</Text>
             )}
             {protocolData.client.phone && (
-              <Text style={styles.protocolText}>Phone: {protocolData.client.phone}</Text>
+              <Text style={styles.protocolText}>{t.fields.phone}: {protocolData.client.phone}</Text>
             )}
             {protocolData.client.email && (
-              <Text style={styles.protocolText}>Email: {protocolData.client.email}</Text>
+              <Text style={styles.protocolText}>{t.fields.email}: {protocolData.client.email}</Text>
             )}
           </View>
 
           {/* Object Info */}
           <View style={styles.protocolSection}>
-            <Text style={styles.sectionTitle}>Inspected Object</Text>
-            <Text style={styles.protocolText}>Object Name: {protocolData.object.name}</Text>
-            <Text style={styles.protocolText}>Address: {protocolData.object.address}</Text>
-            <Text style={styles.protocolText}>Inspection Date: {protocolData.object.scheduledDate}</Text>
+            <Text style={styles.sectionTitle}>{t.screens.protocol.inspectedObject}</Text>
+            <Text style={styles.protocolText}>{t.fields.objectName}: {protocolData.object.name}</Text>
+            <Text style={styles.protocolText}>{t.fields.address}: {protocolData.object.address}</Text>
+            <Text style={styles.protocolText}>{t.screens.protocol.inspectionDate}: {protocolData.object.scheduledDate}</Text>
           </View>
 
           {/* Measurement Scope */}
           <View style={styles.protocolSection}>
-            <Text style={styles.sectionTitle}>Measurement Scope</Text>
+            <Text style={styles.sectionTitle}>{t.screens.protocol.measurementScope}</Text>
             <View style={styles.scopeList}>
               {protocolData.scope.loopImpedance && (
-                <Text style={styles.scopeItem}>✓ Loop Impedance Measurement</Text>
+                <Text style={styles.scopeItem}>✓ {t.screens.protocol.loopImpedanceMeasurement}</Text>
               )}
               {protocolData.scope.insulation && (
-                <Text style={styles.scopeItem}>✓ Insulation Resistance Testing</Text>
+                <Text style={styles.scopeItem}>✓ {t.screens.protocol.insulationResistanceTesting}</Text>
               )}
               {protocolData.scope.rcd && (
-                <Text style={styles.scopeItem}>✓ RCD Testing</Text>
+                <Text style={styles.scopeItem}>✓ {t.screens.protocol.rcdTesting}</Text>
               )}
               {protocolData.scope.peContinuity && (
-                <Text style={styles.scopeItem}>✓ PE Continuity Testing</Text>
+                <Text style={styles.scopeItem}>✓ {t.screens.protocol.peContinuityTesting}</Text>
               )}
               {protocolData.scope.earthing && (
-                <Text style={styles.scopeItem}>✓ Earthing Resistance Measurement</Text>
+                <Text style={styles.scopeItem}>✓ {t.screens.protocol.earthingResistanceMeasurement}</Text>
               )}
               {protocolData.scope.polarity && (
-                <Text style={styles.scopeItem}>✓ Polarity Check</Text>
+                <Text style={styles.scopeItem}>✓ {t.screens.protocol.polarityCheck}</Text>
               )}
               {protocolData.scope.phaseSequence && (
-                <Text style={styles.scopeItem}>✓ Phase Sequence Check</Text>
+                <Text style={styles.scopeItem}>✓ {t.screens.protocol.phaseSequenceCheck}</Text>
               )}
               {protocolData.scope.breakersCheck && (
-                <Text style={styles.scopeItem}>✓ Circuit Breakers Check</Text>
+                <Text style={styles.scopeItem}>✓ {t.screens.protocol.circuitBreakersCheck}</Text>
               )}
               {protocolData.scope.lps && (
-                <Text style={styles.scopeItem}>✓ Lightning Protection System</Text>
+                <Text style={styles.scopeItem}>✓ {t.screens.protocol.lightningProtectionSystem}</Text>
               )}
               {protocolData.scope.visualInspection && (
-                <Text style={styles.scopeItem}>✓ Visual Inspection</Text>
+                <Text style={styles.scopeItem}>✓ {t.measurementTypes.visualInspection}</Text>
               )}
             </View>
           </View>
 
           {/* Results by Room - Table Format */}
           <View style={styles.protocolSection}>
-            <Text style={styles.sectionTitle}>Measurement Results</Text>
+            <Text style={styles.sectionTitle}>{t.screens.protocol.measurementResults}</Text>
             
             {/* Table Header */}
             <View style={styles.tableHeader}>
-              <Text style={[styles.tableHeaderCell, styles.tableRoomCell]}>Room</Text>
-              <Text style={[styles.tableHeaderCell, styles.tablePointCell]}>Point</Text>
-              <Text style={[styles.tableHeaderCell, styles.tableTypeCell]}>Type</Text>
-              <Text style={[styles.tableHeaderCell, styles.tableResultsCell]}>Results</Text>
-              <Text style={[styles.tableHeaderCell, styles.tableStatusCell]}>Status</Text>
+              <Text style={[styles.tableHeaderCell, styles.tableRoomCell]}>{t.screens.protocol.room}</Text>
+              <Text style={[styles.tableHeaderCell, styles.tablePointCell]}>{t.screens.protocol.point}</Text>
+              <Text style={[styles.tableHeaderCell, styles.tableTypeCell]}>{t.screens.protocol.type}</Text>
+              <Text style={[styles.tableHeaderCell, styles.tableResultsCell]}>{t.screens.protocol.results}</Text>
+              <Text style={[styles.tableHeaderCell, styles.tableStatusCell]}>{t.screens.protocol.status}</Text>
             </View>
             
             {/* Table Rows */}
@@ -1118,7 +1121,7 @@ const ProtocolTab: React.FC = () => {
                         { backgroundColor: pwr.status === 'ok' ? '#66BB6A' : pwr.status === 'not_ok' ? '#EF5350' : '#999' }
                       ]}>
                         <Text style={styles.statusBadgeText}>
-                          {pwr.status === 'ok' ? 'PASS' : pwr.status === 'not_ok' ? 'FAIL' : 'N/A'}
+                          {pwr.status === 'ok' ? t.fields.pass : pwr.status === 'not_ok' ? t.fields.fail : t.pointStatus.unmeasured}
                         </Text>
                       </View>
                     </View>
@@ -1131,13 +1134,13 @@ const ProtocolTab: React.FC = () => {
           {/* LPS Section */}
           {protocolData.lpsSection && protocolData.lpsSection.points.length > 0 && (
             <View style={styles.protocolSection}>
-              <Text style={styles.sectionTitle}>Lightning Protection System (LPS)</Text>
+              <Text style={styles.sectionTitle}>{t.screens.protocol.lightningProtectionSystem}</Text>
               
               {/* Table Header */}
               <View style={styles.tableHeader}>
-                <Text style={[styles.tableHeaderCell, styles.tablePointCell]}>Point</Text>
-                <Text style={[styles.tableHeaderCell, styles.tableResultsCell]}>Results</Text>
-                <Text style={[styles.tableHeaderCell, styles.tableStatusCell]}>Status</Text>
+                <Text style={[styles.tableHeaderCell, styles.tablePointCell]}>{t.screens.protocol.point}</Text>
+                <Text style={[styles.tableHeaderCell, styles.tableResultsCell]}>{t.screens.protocol.results}</Text>
+                <Text style={[styles.tableHeaderCell, styles.tableStatusCell]}>{t.screens.protocol.status}</Text>
               </View>
               
               {/* Table Rows */}
@@ -1148,13 +1151,13 @@ const ProtocolTab: React.FC = () => {
                     {pwr.result ? (
                       <>
                         {pwr.result.lpsEarthingResistance !== null && pwr.result.lpsEarthingResistance !== undefined && 
-                          `Earthing: ${pwr.result.lpsEarthingResistance}Ω`}
+                          `Uziemienie: ${pwr.result.lpsEarthingResistance}Ω`}
                         {pwr.result.lpsContinuityOk !== null && pwr.result.lpsContinuityOk !== undefined && 
-                          ` | Continuity: ${pwr.result.lpsContinuityOk ? 'OK' : 'NOT OK'}`}
+                          ` | Ciągłość: ${pwr.result.lpsContinuityOk ? 'OK' : 'NIE OK'}`}
                         {pwr.result.lpsVisualOk !== null && pwr.result.lpsVisualOk !== undefined && 
-                          ` | Visual: ${pwr.result.lpsVisualOk ? 'OK' : 'NOT OK'}`}
+                          ` | Wizualny: ${pwr.result.lpsVisualOk ? 'OK' : 'NIE OK'}`}
                       </>
-                    ) : 'No measurements recorded'}
+                    ) : 'Brak zapisanych pomiarów'}
                   </Text>
                   <View style={[styles.tableCell, styles.tableStatusCell]}>
                     <View style={[
@@ -1162,7 +1165,7 @@ const ProtocolTab: React.FC = () => {
                       { backgroundColor: pwr.status === 'ok' ? '#66BB6A' : pwr.status === 'not_ok' ? '#EF5350' : '#999' }
                     ]}>
                       <Text style={styles.statusBadgeText}>
-                        {pwr.status === 'ok' ? 'PASS' : pwr.status === 'not_ok' ? 'FAIL' : 'N/A'}
+                        {pwr.status === 'ok' ? t.fields.pass : pwr.status === 'not_ok' ? t.fields.fail : t.pointStatus.unmeasured}
                       </Text>
                     </View>
                   </View>
@@ -1174,33 +1177,33 @@ const ProtocolTab: React.FC = () => {
           {/* Visual Inspection */}
           {protocolData.visualInspection && (
             <View style={styles.protocolSection}>
-              <Text style={styles.sectionTitle}>Visual Inspection</Text>
+              <Text style={styles.sectionTitle}>{t.measurementTypes.visualInspection}</Text>
               <View style={styles.visualInspectionContent}>
-                <Text style={styles.protocolLabel}>Summary:</Text>
+                <Text style={styles.protocolLabel}>{t.fields.summary}:</Text>
                 <Text style={styles.protocolText}>{protocolData.visualInspection.summary}</Text>
                 
                 {protocolData.visualInspection.defectsFound && (
                   <>
-                    <Text style={[styles.protocolLabel, styles.marginTop]}>Defects Found:</Text>
+                    <Text style={[styles.protocolLabel, styles.marginTop]}>{t.fields.defectsFound}:</Text>
                     <Text style={styles.protocolText}>{protocolData.visualInspection.defectsFound}</Text>
                   </>
                 )}
                 
                 {protocolData.visualInspection.recommendations && (
                   <>
-                    <Text style={[styles.protocolLabel, styles.marginTop]}>Recommendations:</Text>
+                    <Text style={[styles.protocolLabel, styles.marginTop]}>{t.fields.recommendations}:</Text>
                     <Text style={styles.protocolText}>{protocolData.visualInspection.recommendations}</Text>
                   </>
                 )}
                 
                 <View style={[styles.visualResultContainer, styles.marginTop]}>
-                  <Text style={styles.protocolLabel}>Overall Result:</Text>
+                  <Text style={styles.protocolLabel}>Wynik ogólny:</Text>
                   <View style={[
                     styles.statusBadgeSmall,
                     { backgroundColor: protocolData.visualInspection.visualResultPass ? '#66BB6A' : '#EF5350' }
                   ]}>
                     <Text style={styles.statusBadgeText}>
-                      {protocolData.visualInspection.visualResultPass ? 'PASS' : 'FAIL'}
+                      {protocolData.visualInspection.visualResultPass ? t.fields.pass : t.fields.fail}
                     </Text>
                   </View>
                 </View>
@@ -1210,16 +1213,16 @@ const ProtocolTab: React.FC = () => {
 
           {/* Signature */}
           <View style={styles.protocolSection}>
-            <Text style={styles.sectionTitle}>Signature</Text>
+            <Text style={styles.sectionTitle}>{t.screens.protocol.signature}</Text>
             <View style={styles.signatureContainer}>
               <FormField
-                label="Signature Date"
+                label="Data podpisu"
                 value={signatureDate}
                 onChangeText={setSignatureDate}
-                placeholder="YYYY-MM-DD"
+                placeholder="RRRR-MM-DD"
               />
               <View style={styles.signatureLine}>
-                <Text style={styles.protocolLabel}>Inspector Signature:</Text>
+                <Text style={styles.protocolLabel}>Podpis inspektora:</Text>
                 <View style={styles.signatureUnderline} />
               </View>
             </View>
@@ -1236,7 +1239,7 @@ const ProtocolTab: React.FC = () => {
                 icon="printer"
                 style={styles.exportButton}
               >
-                Print Protocol
+                {t.screens.protocol.print}
               </Button>
             ) : (
               <Button
@@ -1247,7 +1250,7 @@ const ProtocolTab: React.FC = () => {
                 icon="file-pdf-box"
                 style={styles.exportButton}
               >
-                Export PDF
+                {`${t.screens.protocol.export} PDF`}
               </Button>
             )}
           </View>
@@ -1420,11 +1423,11 @@ export const OrderDetailsScreen: React.FC = () => {
   const getStatusLabel = (status: string): string => {
     switch (status) {
       case 'draft':
-        return 'Draft';
+        return t.orderStatus.draft;
       case 'in_progress':
-        return 'In Progress';
+        return t.orderStatus.in_progress;
       case 'done':
-        return 'Done';
+        return t.orderStatus.done;
       default:
         return status;
     }
@@ -1514,30 +1517,30 @@ export const OrderDetailsScreen: React.FC = () => {
             },
           }}
         >
-          <Tab.Screen name="Rooms" component={RoomsTab} />
-          <Tab.Screen name="Points" component={PointsTab} />
+          <Tab.Screen name={t.navigation.rooms} component={RoomsTab} />
+          <Tab.Screen name={t.navigation.points} component={PointsTab} />
           {/* Conditionally show Visual tab only if visualInspection is enabled */}
           {order.visualInspection && (
-            <Tab.Screen name="Visual" component={VisualTab} />
+            <Tab.Screen name={t.navigation.visualInspection} component={VisualTab} />
           )}
-          <Tab.Screen name="Protocol" component={ProtocolTab} />
+          <Tab.Screen name={t.navigation.protocol} component={ProtocolTab} />
         </Tab.Navigator>
 
         {/* Delete order confirmation dialog */}
         <Portal>
           <Dialog visible={deleteOrderDialogVisible} onDismiss={cancelDeleteOrder}>
-            <Dialog.Title>Delete Order</Dialog.Title>
+            <Dialog.Title>{t.confirmations.deleteTitle}</Dialog.Title>
             <Dialog.Content>
               <Paragraph>
-                Are you sure you want to delete this order? This action cannot be undone.
+                Czy na pewno chcesz usunąć to zlecenie? Tej operacji nie można cofnąć.
               </Paragraph>
             </Dialog.Content>
             <Dialog.Actions>
               <Button mode="text" onPress={cancelDeleteOrder}>
-                Cancel
+                {t.common.cancel}
               </Button>
               <Button mode="text" onPress={confirmDeleteOrder}>
-                Delete
+                {t.common.delete}
               </Button>
             </Dialog.Actions>
           </Dialog>

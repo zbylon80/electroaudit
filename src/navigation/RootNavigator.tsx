@@ -14,6 +14,7 @@ import {
   PointFormScreen,
   MeasurementFormScreen,
 } from '../screens';
+import { translations as t } from '../constants';
 
 const Stack = createStackNavigator<RootStackParamList>();
 const Tab = createBottomTabNavigator();
@@ -38,8 +39,8 @@ const MainTabs: React.FC = () => {
         name="OrdersScreen"
         component={OrdersScreen}
         options={{
-          title: 'Inspection Orders',
-          tabBarLabel: 'Orders',
+          title: t.navigation.orders,
+          tabBarLabel: t.navigation.orders,
           tabBarIcon: ({ color, size }) => (
             <Icon source="clipboard-text" size={size} color={color} />
           ),
@@ -49,8 +50,8 @@ const MainTabs: React.FC = () => {
         name="ClientsScreen"
         component={ClientsScreen}
         options={{
-          title: 'Clients',
-          tabBarLabel: 'Clients',
+          title: t.navigation.clients,
+          tabBarLabel: t.navigation.clients,
           tabBarIcon: ({ color, size }) => (
             <Icon source="account-group" size={size} color={color} />
           ),
@@ -85,42 +86,42 @@ export const RootNavigator: React.FC = () => {
           name="OrderFormScreen"
           component={OrderFormScreen}
           options={({ route }) => ({
-            title: route.params?.orderId ? 'Edit Order' : 'Create Order',
+            title: route.params?.orderId ? t.screens.orderForm.editOrder : t.screens.orderForm.newOrder,
           })}
         />
         <Stack.Screen
           name="ClientFormScreen"
           component={ClientFormScreen}
           options={({ route }) => ({
-            title: route.params?.clientId ? 'Edit Client' : 'Add Client',
+            title: route.params?.clientId ? t.screens.clientForm.editClient : t.screens.clientForm.newClient,
           })}
         />
         <Stack.Screen
           name="OrderDetailsScreen"
           component={OrderDetailsScreen}
           options={{
-            title: 'Order Details',
+            title: t.screens.orderDetails.title,
           }}
         />
         <Stack.Screen
           name="RoomFormScreen"
           component={RoomFormScreen}
           options={({ route }) => ({
-            title: route.params?.roomId ? 'Edit Room' : 'Add Room',
+            title: route.params?.roomId ? t.screens.roomForm.editRoom : t.screens.roomForm.newRoom,
           })}
         />
         <Stack.Screen
           name="PointFormScreen"
           component={PointFormScreen}
           options={({ route }) => ({
-            title: route.params?.pointId ? 'Edit Point' : 'Add Point',
+            title: route.params?.pointId ? t.screens.pointForm.editPoint : t.screens.pointForm.newPoint,
           })}
         />
         <Stack.Screen
           name="MeasurementFormScreen"
           component={MeasurementFormScreen}
           options={{
-            title: 'Record Measurements',
+            title: t.screens.measurementForm.title,
           }}
         />
       </Stack.Navigator>

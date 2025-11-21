@@ -158,7 +158,7 @@ export async function generateProtocolData(orderId: string): Promise<ProtocolDat
   // Add unassigned points if any
   if (unassignedPoints.length > 0) {
     resultsByRoom.push({
-      roomName: 'Unassigned',
+      roomName: 'Nieprzypisane',
       points: unassignedPoints,
     });
   }
@@ -166,7 +166,7 @@ export async function generateProtocolData(orderId: string): Promise<ProtocolDat
   // Build protocol data
   const protocolData: ProtocolData = {
     inspector: {
-      name: 'Inspector Name', // TODO: Make this configurable
+      name: '', // Empty by default, user can fill it in
       licenseNumber: undefined,
       company: undefined,
     },

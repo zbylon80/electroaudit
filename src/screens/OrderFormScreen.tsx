@@ -18,6 +18,7 @@ import { validateRequired } from '../utils/validators';
 import { v4 as uuidv4 } from 'uuid';
 import { useNotification } from '../contexts/NotificationContext';
 import { getErrorMessage } from '../utils/errorHandler';
+import { translations as t } from '../constants';
 
 type OrderFormScreenRouteProp = RouteProp<RootStackParamList, 'OrderFormScreen'>;
 type OrderFormScreenNavigationProp = StackNavigationProp<RootStackParamList, 'OrderFormScreen'>;
@@ -307,7 +308,7 @@ export const OrderFormScreen: React.FC = () => {
     <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer}>
       <View style={styles.form}>
         {/* Client Selection Section */}
-        <FormSection title="Client Selection">
+        <FormSection title={t.screens.orderForm.clientSelection}>
           <Controller
             control={control}
             name="clientId"
@@ -317,11 +318,11 @@ export const OrderFormScreen: React.FC = () => {
             render={({ field: { onChange, value } }) => (
               <View>
                 <Picker
-                  label="Client"
+                  label={t.fields.client}
                   value={value}
                   items={clientPickerItems}
                   onValueChange={onChange}
-                  placeholder="Select a client"
+                  placeholder={t.placeholders.selectClient}
                 />
                 {errors.clientId && (
                   <FormField
@@ -341,25 +342,25 @@ export const OrderFormScreen: React.FC = () => {
             onPress={handleAddClient}
             style={styles.addClientButton}
           >
-            Add New Client
+            {t.screens.orderForm.addClient}
           </Button>
         </FormSection>
 
         {/* Object Info Section */}
-        <FormSection title="Object Information">
+        <FormSection title={t.screens.orderForm.objectInfo}>
           <Controller
             control={control}
             name="objectName"
             rules={{
-              validate: (value) => validateRequired(value) || 'Object name is required',
+              validate: (value) => validateRequired(value) || t.screens.orderForm.objectNameRequired,
             }}
             render={({ field: { onChange, value } }) => (
               <FormField
-                label="Object Name"
+                label={t.fields.objectName}
                 value={value}
                 onChangeText={onChange}
                 error={errors.objectName?.message}
-                placeholder="Enter object name"
+                placeholder={t.placeholders.enterObjectName}
                 required
               />
             )}
@@ -373,11 +374,11 @@ export const OrderFormScreen: React.FC = () => {
             }}
             render={({ field: { onChange, value } }) => (
               <FormField
-                label="Address"
+                label={t.fields.address}
                 value={value}
                 onChangeText={onChange}
                 error={errors.address?.message}
-                placeholder="Enter address"
+                placeholder={t.placeholders.enterAddress}
                 multiline
                 numberOfLines={2}
                 required
@@ -390,7 +391,7 @@ export const OrderFormScreen: React.FC = () => {
             name="scheduledDate"
             render={({ field: { onChange, value } }) => (
               <DatePicker
-                label="Scheduled Date"
+                label={t.fields.scheduledDate}
                 value={value}
                 onChangeDate={onChange}
                 error={errors.scheduledDate?.message}
@@ -403,11 +404,11 @@ export const OrderFormScreen: React.FC = () => {
             name="notes"
             render={({ field: { onChange, value } }) => (
               <FormField
-                label="Notes"
+                label={t.fields.notes}
                 value={value}
                 onChangeText={onChange}
                 error={errors.notes?.message}
-                placeholder="Enter any additional notes"
+                placeholder={t.placeholders.enterAdditionalNotes}
                 multiline
                 numberOfLines={3}
               />
@@ -416,13 +417,13 @@ export const OrderFormScreen: React.FC = () => {
         </FormSection>
 
         {/* Measurement Scope Section */}
-        <FormSection title="Measurement Scope">
+        <FormSection title={t.screens.orderForm.measurementScope}>
           <Controller
             control={control}
             name="measureLoopImpedance"
             render={({ field: { onChange, value } }) => (
               <Checkbox
-                label="Loop Impedance"
+                label={t.measurementTypes.loopImpedance}
                 checked={value}
                 onPress={() => onChange(!value)}
               />
@@ -434,7 +435,7 @@ export const OrderFormScreen: React.FC = () => {
             name="measureInsulation"
             render={({ field: { onChange, value } }) => (
               <Checkbox
-                label="Insulation Resistance"
+                label={t.measurementTypes.insulation}
                 checked={value}
                 onPress={() => onChange(!value)}
               />
@@ -446,7 +447,7 @@ export const OrderFormScreen: React.FC = () => {
             name="measureRcd"
             render={({ field: { onChange, value } }) => (
               <Checkbox
-                label="RCD Testing"
+                label={t.measurementTypes.rcd}
                 checked={value}
                 onPress={() => onChange(!value)}
               />
@@ -458,7 +459,7 @@ export const OrderFormScreen: React.FC = () => {
             name="measurePeContinuity"
             render={({ field: { onChange, value } }) => (
               <Checkbox
-                label="PE Continuity"
+                label={t.measurementTypes.peContinuity}
                 checked={value}
                 onPress={() => onChange(!value)}
               />
@@ -470,7 +471,7 @@ export const OrderFormScreen: React.FC = () => {
             name="measureEarthing"
             render={({ field: { onChange, value } }) => (
               <Checkbox
-                label="Earthing Resistance"
+                label={t.measurementTypes.earthing}
                 checked={value}
                 onPress={() => onChange(!value)}
               />
@@ -482,7 +483,7 @@ export const OrderFormScreen: React.FC = () => {
             name="measurePolarity"
             render={({ field: { onChange, value } }) => (
               <Checkbox
-                label="Polarity Check"
+                label={t.measurementTypes.polarity}
                 checked={value}
                 onPress={() => onChange(!value)}
               />
@@ -494,7 +495,7 @@ export const OrderFormScreen: React.FC = () => {
             name="measurePhaseSequence"
             render={({ field: { onChange, value } }) => (
               <Checkbox
-                label="Phase Sequence"
+                label={t.measurementTypes.phaseSequence}
                 checked={value}
                 onPress={() => onChange(!value)}
               />
@@ -506,7 +507,7 @@ export const OrderFormScreen: React.FC = () => {
             name="measureBreakersCheck"
             render={({ field: { onChange, value } }) => (
               <Checkbox
-                label="Breakers Check"
+                label={t.measurementTypes.breakersCheck}
                 checked={value}
                 onPress={() => onChange(!value)}
               />
@@ -518,7 +519,7 @@ export const OrderFormScreen: React.FC = () => {
             name="measureLps"
             render={({ field: { onChange, value } }) => (
               <Checkbox
-                label="Lightning Protection System (LPS)"
+                label={t.measurementTypes.lps}
                 checked={value}
                 onPress={() => onChange(!value)}
               />
@@ -530,7 +531,7 @@ export const OrderFormScreen: React.FC = () => {
             name="visualInspection"
             render={({ field: { onChange, value } }) => (
               <Checkbox
-                label="Visual Inspection"
+                label={t.measurementTypes.visualInspection}
                 checked={value}
                 onPress={() => onChange(!value)}
               />
@@ -547,7 +548,7 @@ export const OrderFormScreen: React.FC = () => {
             mode="outlined"
             style={styles.button}
           >
-            {orderId ? 'Update Order' : 'Save as Draft'}
+            {orderId ? t.common.save : 'Zapisz jako szkic'}
           </Button>
 
           <Button
@@ -556,7 +557,7 @@ export const OrderFormScreen: React.FC = () => {
             loading={loading}
             style={styles.button}
           >
-            {orderId ? 'Update & Start' : 'Start Measurements'}
+            {orderId ? t.common.save : t.screens.orderForm.startMeasurements}
           </Button>
         </View>
       </View>
