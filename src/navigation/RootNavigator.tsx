@@ -1,9 +1,12 @@
 import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
+import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { Text } from 'react-native';
 import { RootStackParamList } from './types';
 import {
   OrdersScreen,
+  ClientsScreen,
   OrderFormScreen,
   ClientFormScreen,
   OrderDetailsScreen,
@@ -13,12 +16,48 @@ import {
 } from '../screens';
 
 const Stack = createStackNavigator<RootStackParamList>();
+const Tab = createBottomTabNavigator();
+
+// Bottom Tab Navigator for main screens
+const MainTabs: React.FC = () => {
+  return (
+    <Tab.Navigator
+      screenOptions={{
+        headerStyle: {
+          backgroundColor: '#2196F3',
+        },
+        headerTintColor: '#fff',
+        headerTitleStyle: {
+          fontWeight: 'bold',
+        },
+        tabBarActiveTintColor: '#2196F3',
+        tabBarInactiveTintColor: '#666',
+      }}
+    >
+      <Tab.Screen
+        name="OrdersScreen"
+        component={OrdersScreen}
+        options={{
+          title: 'Inspection Orders',
+          tabBarLabel: 'Orders',
+        }}
+      />
+      <Tab.Screen
+        name="ClientsScreen"
+        component={ClientsScreen}
+        options={{
+          title: 'Clients',
+          tabBarLabel: 'Clients',
+        }}
+      />
+    </Tab.Navigator>
+  );
+};
 
 export const RootNavigator: React.FC = () => {
   return (
     <NavigationContainer>
       <Stack.Navigator
-        initialRouteName="OrdersScreen"
         screenOptions={{
           headerStyle: {
             backgroundColor: '#2196F3',
@@ -30,11 +69,10 @@ export const RootNavigator: React.FC = () => {
         }}
       >
         <Stack.Screen
-          name="OrdersScreen"
-          component={OrdersScreen}
+          name="MainTabs"
+          component={MainTabs}
           options={{
-            title: 'Inspection Orders',
-            headerLeft: () => null, // No back button on main screen
+            headerShown: false, // Hide header for tabs, tabs will show their own headers
           }}
         />
         <Stack.Screen

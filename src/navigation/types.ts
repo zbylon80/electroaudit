@@ -2,7 +2,9 @@ import { NavigatorScreenParams } from '@react-navigation/native';
 
 // Root Stack Navigator params
 export type RootStackParamList = {
+  MainTabs: undefined;
   OrdersScreen: undefined;
+  ClientsScreen: undefined;
   OrderFormScreen: { orderId?: string };
   ClientFormScreen: { clientId?: string };
   OrderDetailsScreen: { orderId: string };
