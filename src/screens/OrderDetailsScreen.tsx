@@ -802,6 +802,7 @@ const ProtocolTab: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [protocolData, setProtocolData] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
+  const [exporting, setExporting] = useState(false);
   const isWeb = Platform.OS === 'web';
 
   const loadProtocolData = async () => {
@@ -829,6 +830,110 @@ const ProtocolTab: React.FC = () => {
     }
   };
 
+  const handleExport = async () => {
+    try {
+      setExporting(true);
+      
+      if (isWeb) {
+        // On web, use window.print()
+        window.print();
+      } else {
+        // On mobile, show alert that PDF export will be implemented in next task
+        Alert.alert(
+          'Export Protocol',
+          'PDF export functionality will be available in the next update. For now, you can take screenshots of the protocol.',
+          [{ text: 'OK' }]
+        );
+      }
+    } catch (err) {
+      console.error('Error exporting protocol:', err);
+      if (isWeb) {
+        window.alert('Failed to export protocol');
+      } else {
+        Alert.alert('Error', 'Failed to export protocol');
+      }
+    } finally {
+      setExporting(false);
+    }
+  };
+
+  const getTypeLabel = (type: string): string => {
+    switch (type) {
+      case 'socket_1p':
+        return 'Socket 1P';
+      case 'socket_3p':
+        return 'Socket 3P';
+      case 'lighting':
+        return 'Lighting';
+      case 'rcd':
+        return 'RCD';
+      case 'earthing':
+        return 'Earthing';
+      case 'lps':
+        return 'LPS';
+      case 'other':
+        return 'Other';
+      default:
+        return type;
+    }
+  };
+
+  const formatMeasurementResults = (result: any, scope: any): string => {
+    if (!result) return 'No measurements recorded';
+    
+    const parts: string[] = [];
+    
+    if (scope.loopImpedance && result.loopImpedance !== null && result.loopImpedance !== undefined) {
+      parts.push(`Loop: ${result.loopImpedance}Ω`);
+    }
+    
+    if (scope.insulation) {
+      const insulationParts: string[] = [];
+      if (result.insulationLn !== null && result.insulationLn !== undefined) {
+        insulationParts.push(`L-N: ${result.insulationLn}MΩ`);
+      }
+      if (result.insulationLpe !== null && result.insulationLpe !== undefined) {
+        insulationParts.push(`L-PE: ${result.insulationLpe}MΩ`);
+      }
+      if (result.insulationNpe !== null && result.insulationNpe !== undefined) {
+        insulationParts.push(`N-PE: ${result.insulationNpe}MΩ`);
+      }
+      if (insulationParts.length > 0) {
+        parts.push(`Insulation: ${insulationParts.join(', ')}`);
+      }
+    }
+    
+    if (scope.rcd && result.rcdType) {
+      parts.push(`RCD: ${result.rcdType}, ${result.rcdRatedCurrent}mA, 1x: ${result.rcdTime1x}ms, 5x: ${result.rcdTime5x}ms`);
+    }
+    
+    if (scope.peContinuity && result.peResistance !== null && result.peResistance !== undefined) {
+      parts.push(`PE: ${result.peResistance}Ω`);
+    }
+    
+    if (scope.earthing && result.earthingResistance !== null && result.earthingResistance !== undefined) {
+      parts.push(`Earthing: ${result.earthingResistance}Ω`);
+    }
+    
+    if (scope.polarity && result.polarityOk !== null && result.polarityOk !== undefined) {
+      parts.push(`Polarity: ${result.polarityOk ? 'OK' : 'NOT OK'}`);
+    }
+    
+    if (scope.phaseSequence && result.phaseSequenceOk !== null && result.phaseSequenceOk !== undefined) {
+      parts.push(`Phase Seq: ${result.phaseSequenceOk ? 'OK' : 'NOT OK'}`);
+    }
+    
+    if (scope.breakersCheck && result.breakerCheckOk !== null && result.breakerCheckOk !== undefined) {
+      parts.push(`Breakers: ${result.breakerCheckOk ? 'OK' : 'NOT OK'}`);
+    }
+    
+    if (result.comments) {
+      parts.push(`Comments: ${result.comments}`);
+    }
+    
+    return parts.length > 0 ? parts.join(' | ') : 'No measurements recorded';
+  };
+
   useFocusEffect(
     useCallback(() => {
       loadProtocolData();
@@ -852,17 +957,17 @@ const ProtocolTab: React.FC = () => {
   }
 
   return (
-    <View style={styles.tabContainer}>
+    <View style={styles.tabContentContainer}>
       <ScrollView style={styles.scrollView}>
         <View style={styles.protocolContainer}>
-          <Text style={styles.protocolTitle}>Inspection Protocol</Text>
+          <Text style={styles.protocolTitle}>Electrical Inspection Protocol</Text>
           
           {/* Inspector Info */}
           <View style={styles.protocolSection}>
             <Text style={styles.sectionTitle}>Inspector Information</Text>
             <Text style={styles.protocolText}>Name: {protocolData.inspector.name}</Text>
             {protocolData.inspector.licenseNumber && (
-              <Text style={styles.protocolText}>License: {protocolData.inspector.licenseNumber}</Text>
+              <Text style={styles.protocolText}>License Number: {protocolData.inspector.licenseNumber}</Text>
             )}
             {protocolData.inspector.company && (
               <Text style={styles.protocolText}>Company: {protocolData.inspector.company}</Text>
@@ -875,21 +980,24 @@ const ProtocolTab: React.FC = () => {
             <Text style={styles.protocolText}>Name: {protocolData.client.name}</Text>
             <Text style={styles.protocolText}>Address: {protocolData.client.address}</Text>
             {protocolData.client.contactPerson && (
-              <Text style={styles.protocolText}>Contact: {protocolData.client.contactPerson}</Text>
+              <Text style={styles.protocolText}>Contact Person: {protocolData.client.contactPerson}</Text>
             )}
             {protocolData.client.phone && (
               <Text style={styles.protocolText}>Phone: {protocolData.client.phone}</Text>
+            )}
+            {protocolData.client.email && (
+              <Text style={styles.protocolText}>Email: {protocolData.client.email}</Text>
             )}
           </View>
 
           {/* Object Info */}
           <View style={styles.protocolSection}>
-            <Text style={styles.sectionTitle}>Object Information</Text>
-            <Text style={styles.protocolText}>Name: {protocolData.object.name}</Text>
+            <Text style={styles.sectionTitle}>Inspected Object</Text>
+            <Text style={styles.protocolText}>Object Name: {protocolData.object.name}</Text>
             <Text style={styles.protocolText}>Address: {protocolData.object.address}</Text>
             {protocolData.object.scheduledDate && (
               <Text style={styles.protocolText}>
-                Date: {new Date(protocolData.object.scheduledDate).toLocaleDateString()}
+                Inspection Date: {new Date(protocolData.object.scheduledDate).toLocaleDateString()}
               </Text>
             )}
           </View>
@@ -897,33 +1005,76 @@ const ProtocolTab: React.FC = () => {
           {/* Measurement Scope */}
           <View style={styles.protocolSection}>
             <Text style={styles.sectionTitle}>Measurement Scope</Text>
-            {protocolData.scope.loopImpedance && <Text style={styles.protocolText}>✓ Loop Impedance</Text>}
-            {protocolData.scope.insulation && <Text style={styles.protocolText}>✓ Insulation Resistance</Text>}
-            {protocolData.scope.rcd && <Text style={styles.protocolText}>✓ RCD Testing</Text>}
-            {protocolData.scope.peContinuity && <Text style={styles.protocolText}>✓ PE Continuity</Text>}
-            {protocolData.scope.earthing && <Text style={styles.protocolText}>✓ Earthing</Text>}
-            {protocolData.scope.polarity && <Text style={styles.protocolText}>✓ Polarity</Text>}
-            {protocolData.scope.phaseSequence && <Text style={styles.protocolText}>✓ Phase Sequence</Text>}
-            {protocolData.scope.breakersCheck && <Text style={styles.protocolText}>✓ Breakers Check</Text>}
-            {protocolData.scope.lps && <Text style={styles.protocolText}>✓ LPS</Text>}
-            {protocolData.scope.visualInspection && <Text style={styles.protocolText}>✓ Visual Inspection</Text>}
+            <View style={styles.scopeList}>
+              {protocolData.scope.loopImpedance && (
+                <Text style={styles.scopeItem}>✓ Loop Impedance Measurement</Text>
+              )}
+              {protocolData.scope.insulation && (
+                <Text style={styles.scopeItem}>✓ Insulation Resistance Testing</Text>
+              )}
+              {protocolData.scope.rcd && (
+                <Text style={styles.scopeItem}>✓ RCD Testing</Text>
+              )}
+              {protocolData.scope.peContinuity && (
+                <Text style={styles.scopeItem}>✓ PE Continuity Testing</Text>
+              )}
+              {protocolData.scope.earthing && (
+                <Text style={styles.scopeItem}>✓ Earthing Resistance Measurement</Text>
+              )}
+              {protocolData.scope.polarity && (
+                <Text style={styles.scopeItem}>✓ Polarity Check</Text>
+              )}
+              {protocolData.scope.phaseSequence && (
+                <Text style={styles.scopeItem}>✓ Phase Sequence Check</Text>
+              )}
+              {protocolData.scope.breakersCheck && (
+                <Text style={styles.scopeItem}>✓ Circuit Breakers Check</Text>
+              )}
+              {protocolData.scope.lps && (
+                <Text style={styles.scopeItem}>✓ Lightning Protection System</Text>
+              )}
+              {protocolData.scope.visualInspection && (
+                <Text style={styles.scopeItem}>✓ Visual Inspection</Text>
+              )}
+            </View>
           </View>
 
-          {/* Results by Room */}
+          {/* Results by Room - Table Format */}
           <View style={styles.protocolSection}>
             <Text style={styles.sectionTitle}>Measurement Results</Text>
-            {protocolData.resultsByRoom.map((roomSection: any, index: number) => (
-              <View key={index} style={styles.roomSection}>
-                <Text style={styles.roomSectionTitle}>{roomSection.roomName}</Text>
-                {roomSection.points.map((pwr: any) => (
-                  <View key={pwr.point.id} style={styles.pointResultRow}>
-                    <Text style={styles.pointResultLabel}>{pwr.point.label}</Text>
-                    <Text style={[
-                      styles.pointResultStatus,
-                      { color: pwr.status === 'ok' ? '#66BB6A' : pwr.status === 'not_ok' ? '#EF5350' : '#999' }
-                    ]}>
-                      {pwr.status === 'ok' ? 'OK' : pwr.status === 'not_ok' ? 'NOT OK' : 'Unmeasured'}
+            
+            {/* Table Header */}
+            <View style={styles.tableHeader}>
+              <Text style={[styles.tableHeaderCell, styles.tableRoomCell]}>Room</Text>
+              <Text style={[styles.tableHeaderCell, styles.tablePointCell]}>Point</Text>
+              <Text style={[styles.tableHeaderCell, styles.tableTypeCell]}>Type</Text>
+              <Text style={[styles.tableHeaderCell, styles.tableResultsCell]}>Results</Text>
+              <Text style={[styles.tableHeaderCell, styles.tableStatusCell]}>Status</Text>
+            </View>
+            
+            {/* Table Rows */}
+            {protocolData.resultsByRoom.map((roomSection: any, roomIndex: number) => (
+              <View key={roomIndex}>
+                {roomSection.points.map((pwr: any, pointIndex: number) => (
+                  <View key={pwr.point.id} style={styles.tableRow}>
+                    <Text style={[styles.tableCell, styles.tableRoomCell]}>
+                      {pointIndex === 0 ? roomSection.roomName : ''}
                     </Text>
+                    <Text style={[styles.tableCell, styles.tablePointCell]}>{pwr.point.label}</Text>
+                    <Text style={[styles.tableCell, styles.tableTypeCell]}>{getTypeLabel(pwr.point.type)}</Text>
+                    <Text style={[styles.tableCell, styles.tableResultsCell, styles.tableResultsText]}>
+                      {formatMeasurementResults(pwr.result, protocolData.scope)}
+                    </Text>
+                    <View style={[styles.tableCell, styles.tableStatusCell]}>
+                      <View style={[
+                        styles.statusBadgeSmall,
+                        { backgroundColor: pwr.status === 'ok' ? '#66BB6A' : pwr.status === 'not_ok' ? '#EF5350' : '#999' }
+                      ]}>
+                        <Text style={styles.statusBadgeText}>
+                          {pwr.status === 'ok' ? 'PASS' : pwr.status === 'not_ok' ? 'FAIL' : 'N/A'}
+                        </Text>
+                      </View>
+                    </View>
                   </View>
                 ))}
               </View>
@@ -931,18 +1082,43 @@ const ProtocolTab: React.FC = () => {
           </View>
 
           {/* LPS Section */}
-          {protocolData.lpsSection && (
+          {protocolData.lpsSection && protocolData.lpsSection.points.length > 0 && (
             <View style={styles.protocolSection}>
               <Text style={styles.sectionTitle}>Lightning Protection System (LPS)</Text>
+              
+              {/* Table Header */}
+              <View style={styles.tableHeader}>
+                <Text style={[styles.tableHeaderCell, styles.tablePointCell]}>Point</Text>
+                <Text style={[styles.tableHeaderCell, styles.tableResultsCell]}>Results</Text>
+                <Text style={[styles.tableHeaderCell, styles.tableStatusCell]}>Status</Text>
+              </View>
+              
+              {/* Table Rows */}
               {protocolData.lpsSection.points.map((pwr: any) => (
-                <View key={pwr.point.id} style={styles.pointResultRow}>
-                  <Text style={styles.pointResultLabel}>{pwr.point.label}</Text>
-                  <Text style={[
-                    styles.pointResultStatus,
-                    { color: pwr.status === 'ok' ? '#66BB6A' : pwr.status === 'not_ok' ? '#EF5350' : '#999' }
-                  ]}>
-                    {pwr.status === 'ok' ? 'OK' : pwr.status === 'not_ok' ? 'NOT OK' : 'Unmeasured'}
+                <View key={pwr.point.id} style={styles.tableRow}>
+                  <Text style={[styles.tableCell, styles.tablePointCell]}>{pwr.point.label}</Text>
+                  <Text style={[styles.tableCell, styles.tableResultsCell, styles.tableResultsText]}>
+                    {pwr.result ? (
+                      <>
+                        {pwr.result.lpsEarthingResistance !== null && pwr.result.lpsEarthingResistance !== undefined && 
+                          `Earthing: ${pwr.result.lpsEarthingResistance}Ω`}
+                        {pwr.result.lpsContinuityOk !== null && pwr.result.lpsContinuityOk !== undefined && 
+                          ` | Continuity: ${pwr.result.lpsContinuityOk ? 'OK' : 'NOT OK'}`}
+                        {pwr.result.lpsVisualOk !== null && pwr.result.lpsVisualOk !== undefined && 
+                          ` | Visual: ${pwr.result.lpsVisualOk ? 'OK' : 'NOT OK'}`}
+                      </>
+                    ) : 'No measurements recorded'}
                   </Text>
+                  <View style={[styles.tableCell, styles.tableStatusCell]}>
+                    <View style={[
+                      styles.statusBadgeSmall,
+                      { backgroundColor: pwr.status === 'ok' ? '#66BB6A' : pwr.status === 'not_ok' ? '#EF5350' : '#999' }
+                    ]}>
+                      <Text style={styles.statusBadgeText}>
+                        {pwr.status === 'ok' ? 'PASS' : pwr.status === 'not_ok' ? 'FAIL' : 'N/A'}
+                      </Text>
+                    </View>
+                  </View>
                 </View>
               ))}
             </View>
@@ -952,27 +1128,66 @@ const ProtocolTab: React.FC = () => {
           {protocolData.visualInspection && (
             <View style={styles.protocolSection}>
               <Text style={styles.sectionTitle}>Visual Inspection</Text>
-              <Text style={styles.protocolText}>Summary: {protocolData.visualInspection.summary}</Text>
-              {protocolData.visualInspection.defectsFound && (
-                <Text style={styles.protocolText}>Defects: {protocolData.visualInspection.defectsFound}</Text>
-              )}
-              {protocolData.visualInspection.recommendations && (
-                <Text style={styles.protocolText}>Recommendations: {protocolData.visualInspection.recommendations}</Text>
-              )}
-              <Text style={[
-                styles.protocolText,
-                { color: protocolData.visualInspection.visualResultPass ? '#66BB6A' : '#EF5350' }
-              ]}>
-                Result: {protocolData.visualInspection.visualResultPass ? 'PASS' : 'FAIL'}
-              </Text>
+              <View style={styles.visualInspectionContent}>
+                <Text style={styles.protocolLabel}>Summary:</Text>
+                <Text style={styles.protocolText}>{protocolData.visualInspection.summary}</Text>
+                
+                {protocolData.visualInspection.defectsFound && (
+                  <>
+                    <Text style={[styles.protocolLabel, styles.marginTop]}>Defects Found:</Text>
+                    <Text style={styles.protocolText}>{protocolData.visualInspection.defectsFound}</Text>
+                  </>
+                )}
+                
+                {protocolData.visualInspection.recommendations && (
+                  <>
+                    <Text style={[styles.protocolLabel, styles.marginTop]}>Recommendations:</Text>
+                    <Text style={styles.protocolText}>{protocolData.visualInspection.recommendations}</Text>
+                  </>
+                )}
+                
+                <View style={[styles.visualResultContainer, styles.marginTop]}>
+                  <Text style={styles.protocolLabel}>Overall Result:</Text>
+                  <View style={[
+                    styles.statusBadgeSmall,
+                    { backgroundColor: protocolData.visualInspection.visualResultPass ? '#66BB6A' : '#EF5350' }
+                  ]}>
+                    <Text style={styles.statusBadgeText}>
+                      {protocolData.visualInspection.visualResultPass ? 'PASS' : 'FAIL'}
+                    </Text>
+                  </View>
+                </View>
+              </View>
             </View>
           )}
 
           {/* Signature */}
           <View style={styles.protocolSection}>
             <Text style={styles.sectionTitle}>Signature</Text>
-            <Text style={styles.protocolText}>Date: _________________</Text>
-            <Text style={styles.protocolText}>Inspector Signature: _________________</Text>
+            <View style={styles.signatureContainer}>
+              <View style={styles.signatureLine}>
+                <Text style={styles.protocolLabel}>Date:</Text>
+                <View style={styles.signatureUnderline} />
+              </View>
+              <View style={styles.signatureLine}>
+                <Text style={styles.protocolLabel}>Inspector Signature:</Text>
+                <View style={styles.signatureUnderline} />
+              </View>
+            </View>
+          </View>
+
+          {/* Export Button */}
+          <View style={styles.exportButtonContainer}>
+            <Button
+              mode="contained"
+              onPress={handleExport}
+              disabled={exporting}
+              loading={exporting}
+              icon="printer"
+              style={styles.exportButton}
+            >
+              {isWeb ? 'Print Protocol' : 'Export Protocol'}
+            </Button>
           </View>
         </View>
       </ScrollView>
@@ -1556,5 +1771,108 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: 'bold',
     marginLeft: 8,
+  },
+  scopeList: {
+    gap: 4,
+  },
+  scopeItem: {
+    fontSize: 14,
+    color: '#333',
+    lineHeight: 22,
+  },
+  tableHeader: {
+    flexDirection: 'row',
+    backgroundColor: '#2196F3',
+    padding: 8,
+    borderTopLeftRadius: 4,
+    borderTopRightRadius: 4,
+  },
+  tableHeaderCell: {
+    fontSize: 12,
+    fontWeight: 'bold',
+    color: '#fff',
+    paddingHorizontal: 4,
+  },
+  tableRow: {
+    flexDirection: 'row',
+    borderBottomWidth: 1,
+    borderBottomColor: '#e0e0e0',
+    paddingVertical: 8,
+    paddingHorizontal: 8,
+    backgroundColor: '#fff',
+  },
+  tableCell: {
+    fontSize: 12,
+    color: '#333',
+    paddingHorizontal: 4,
+    justifyContent: 'center',
+  },
+  tableRoomCell: {
+    width: '15%',
+    fontWeight: '600',
+  },
+  tablePointCell: {
+    width: '20%',
+  },
+  tableTypeCell: {
+    width: '15%',
+  },
+  tableResultsCell: {
+    width: '40%',
+  },
+  tableStatusCell: {
+    width: '10%',
+    alignItems: 'center',
+  },
+  tableResultsText: {
+    fontSize: 11,
+    lineHeight: 16,
+  },
+  statusBadgeSmall: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 4,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  statusBadgeText: {
+    color: '#fff',
+    fontSize: 10,
+    fontWeight: 'bold',
+  },
+  visualInspectionContent: {
+    gap: 8,
+  },
+  protocolLabel: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: '#666',
+  },
+  marginTop: {
+    marginTop: 12,
+  },
+  visualResultContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  signatureContainer: {
+    gap: 20,
+  },
+  signatureLine: {
+    gap: 8,
+  },
+  signatureUnderline: {
+    borderBottomWidth: 1,
+    borderBottomColor: '#333',
+    height: 40,
+  },
+  exportButtonContainer: {
+    marginTop: 32,
+    marginBottom: 32,
+    paddingHorizontal: 16,
+  },
+  exportButton: {
+    paddingVertical: 8,
   },
 });
