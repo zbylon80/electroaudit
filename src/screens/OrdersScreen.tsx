@@ -382,13 +382,15 @@ export const OrdersScreen: React.FC = () => {
         />
       )}
 
-      {/* Floating Action Button */}
-      <FAB
-        icon="plus"
-        style={styles.fab}
-        onPress={handleAddOrder}
-        label="Add Order"
-      />
+      {/* Floating Action Button - only show when there are orders */}
+      {filteredOrders.length > 0 && (
+        <FAB
+          icon="plus"
+          style={styles.fab}
+          onPress={handleAddOrder}
+          label="Add Order"
+        />
+      )}
     </View>
   );
 };
@@ -460,7 +462,7 @@ const styles = StyleSheet.create({
   fab: {
     position: 'absolute',
     right: 16,
-    bottom: 16,
+    bottom: 80,
   },
   emptyContainer: {
     flex: 1,

@@ -221,15 +221,21 @@ export const OrderFormScreen: React.FC = () => {
           });
           createdOrderId = orderId;
         } else {
-          // Create new order on web
+          // Create new order on web - always start with draft status (Requirement 2.2)
           const newOrder: InspectionOrder = {
             id: uuidv4(),
             ...orderInput,
+            status: OrderStatus.DRAFT,
             createdAt: now,
             updatedAt: now,
           };
           webCreateOrder(newOrder);
           createdOrderId = newOrder.id;
+          
+          // If user wants to start measurements immediately, update status
+          if (status === OrderStatus.IN_PROGRESS) {
+            webUpdateOrder(createdOrderId, { status: OrderStatus.IN_PROGRESS, updatedAt: new Date().toISOString() });
+          }
         }
       } else {
         // Use SQLite on mobile
@@ -237,8 +243,14 @@ export const OrderFormScreen: React.FC = () => {
           await updateOrder(orderId, orderInput);
           createdOrderId = orderId;
         } else {
+          // Create new order - always starts with draft status (Requirement 2.2)
           const newOrder = await createOrder(orderInput);
           createdOrderId = newOrder.id;
+          
+          // If user wants to start measurements immediately, update status
+          if (status === OrderStatus.IN_PROGRESS) {
+            await updateOrder(createdOrderId, { ...orderInput, status: OrderStatus.IN_PROGRESS });
+          }
         }
       }
 

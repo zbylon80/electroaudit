@@ -3,7 +3,7 @@
  * This provides the same interface as SQLite services but uses localStorage
  */
 
-import { Client, InspectionOrder } from '../types';
+import { Client, InspectionOrder, Room } from '../types';
 
 const STORAGE_KEYS = {
   CLIENTS: 'electroaudit_clients',
@@ -120,6 +120,40 @@ export const initWebStorage = (): void => {
     saveToStorage(STORAGE_KEYS.VISUAL_INSPECTIONS, []);
   }
   console.log('Web storage initialized successfully');
+};
+
+// Room operations
+export const webGetRoomsByOrder = (orderId: string): Room[] => {
+  const rooms = getFromStorage<Room>(STORAGE_KEYS.ROOMS);
+  return rooms.filter(r => r.inspectionOrderId === orderId).sort((a, b) => a.name.localeCompare(b.name));
+};
+
+export const webCreateRoom = (room: Room): void => {
+  const rooms = getFromStorage<Room>(STORAGE_KEYS.ROOMS);
+  rooms.push(room);
+  saveToStorage(STORAGE_KEYS.ROOMS, rooms);
+};
+
+export const webUpdateRoom = (id: string, updatedRoom: Partial<Room>): void => {
+  const rooms = getFromStorage<Room>(STORAGE_KEYS.ROOMS);
+  const index = rooms.findIndex(r => r.id === id);
+  if (index !== -1) {
+    rooms[index] = { ...rooms[index], ...updatedRoom };
+    saveToStorage(STORAGE_KEYS.ROOMS, rooms);
+  }
+};
+
+export const webDeleteRoom = (id: string): void => {
+  const rooms = getFromStorage<Room>(STORAGE_KEYS.ROOMS);
+  const filtered = rooms.filter(r => r.id !== id);
+  saveToStorage(STORAGE_KEYS.ROOMS, filtered);
+  
+  // Set roomId to null for associated measurement points
+  const points = getFromStorage<any>(STORAGE_KEYS.POINTS);
+  const updatedPoints = points.map(p => 
+    p.roomId === id ? { ...p, roomId: null } : p
+  );
+  saveToStorage(STORAGE_KEYS.POINTS, updatedPoints);
 };
 
 // Clear all data (useful for testing)

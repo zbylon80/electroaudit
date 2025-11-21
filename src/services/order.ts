@@ -18,10 +18,11 @@ export const createOrder = async (orderData: OrderInput): Promise<InspectionOrde
     console.log('Generated order UUID:', id);
     const now = new Date().toISOString();
     
-    // Use the status from orderData (can be draft or in_progress)
+    // Always initialize new orders with status "draft" (Requirement 2.2)
     const order: InspectionOrder = {
       id,
       ...orderData,
+      status: OrderStatus.DRAFT,
       createdAt: now,
       updatedAt: now,
     };
