@@ -5,14 +5,14 @@ import { StackNavigationProp } from '@react-navigation/stack';
 import { createMaterialTopTabNavigator } from '@react-navigation/material-top-tabs';
 import { IconButton, FAB, Dialog, Portal, Paragraph } from 'react-native-paper';
 import { RootStackParamList } from '../navigation/types';
-import { InspectionOrder, Client, Room, MeasurementPoint, MeasurementResult, PointType, PointStatus } from '../types';
-import { getOrder, deleteOrder } from '../services/order';
+import { InspectionOrder, Client, Room, MeasurementPoint, MeasurementResult, PointType, PointStatus, OrderStatus } from '../types';
+import { getOrder, deleteOrder, updateOrderStatus } from '../services/order';
 import { getClient } from '../services/client';
 import { getRoomsByOrder, deleteRoom, createRoom } from '../services/room';
 import { getPointsByOrder, getPointStatus, deletePoint } from '../services/point';
 import { getResultByPoint } from '../services/result';
 import { generateUUID } from '../utils';
-import { webGetOrder, webGetClient, webDeleteOrder, webGetRoomsByOrder, webDeleteRoom, webCreateRoom, webGetPointsByOrder, webGetPointStatus, webDeletePoint, webGetResultByPoint, initWebStorage } from '../services/webStorage';
+import { webGetOrder, webGetClient, webDeleteOrder, webUpdateOrderStatus, webGetRoomsByOrder, webDeleteRoom, webCreateRoom, webGetPointsByOrder, webGetPointStatus, webDeletePoint, webGetResultByPoint, initWebStorage } from '../services/webStorage';
 import { EmptyState } from '../components/lists/EmptyState';
 import { Button } from '../components/common/Button';
 import { Picker, PickerItem } from '../components/common/Picker';
@@ -1345,6 +1345,44 @@ export const OrderDetailsScreen: React.FC = () => {
     setDeleteOrderDialogVisible(false);
   };
 
+  const handleMarkAsDone = async () => {
+    try {
+      if (isWeb) {
+        initWebStorage();
+        webUpdateOrderStatus(orderId, OrderStatus.DONE);
+      } else {
+        await updateOrderStatus(orderId, OrderStatus.DONE);
+      }
+      await loadOrderData();
+    } catch (err) {
+      console.error('Error updating order status:', err);
+      if (isWeb) {
+        window.alert('Failed to update order status');
+      } else {
+        Alert.alert('Error', 'Failed to update order status');
+      }
+    }
+  };
+
+  const handleReopenOrder = async () => {
+    try {
+      if (isWeb) {
+        initWebStorage();
+        webUpdateOrderStatus(orderId, OrderStatus.IN_PROGRESS);
+      } else {
+        await updateOrderStatus(orderId, OrderStatus.IN_PROGRESS);
+      }
+      await loadOrderData();
+    } catch (err) {
+      console.error('Error updating order status:', err);
+      if (isWeb) {
+        window.alert('Failed to update order status');
+      } else {
+        Alert.alert('Error', 'Failed to update order status');
+      }
+    }
+  };
+
   useEffect(() => {
     loadOrderData();
   }, [orderId]);
@@ -1410,6 +1448,22 @@ export const OrderDetailsScreen: React.FC = () => {
                 <Text style={styles.objectName}>{order.objectName}</Text>
               </View>
               <View style={styles.headerActions}>
+                {order.status !== OrderStatus.DONE && (
+                  <IconButton
+                    icon="check-circle"
+                    iconColor="#66BB6A"
+                    size={24}
+                    onPress={handleMarkAsDone}
+                  />
+                )}
+                {order.status === OrderStatus.DONE && (
+                  <IconButton
+                    icon="refresh"
+                    iconColor="#FFA726"
+                    size={24}
+                    onPress={handleReopenOrder}
+                  />
+                )}
                 <IconButton
                   icon="pencil"
                   iconColor="#2196F3"

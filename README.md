@@ -47,7 +47,12 @@ npm run android
 
 # Run on iOS simulator (macOS only)
 npm run ios
+
+# Test on physical device using tunnel (useful when on different networks)
+npx expo start --tunnel
 ```
+
+**Note**: When testing on a physical device, you can use the `--tunnel` option if your computer and phone are on different networks. This creates a secure tunnel connection through Expo's servers. You'll need to install the Expo Go app on your device and scan the QR code displayed in the terminal.
 
 ### Testing
 

@@ -101,6 +101,15 @@ export const webUpdateOrder = (id: string, updatedOrder: Partial<InspectionOrder
   }
 };
 
+export const webUpdateOrderStatus = (id: string, status: string): void => {
+  const orders = getFromStorage<InspectionOrder>(STORAGE_KEYS.ORDERS);
+  const index = orders.findIndex(o => o.id === id);
+  if (index !== -1) {
+    orders[index] = { ...orders[index], status: status as any, updatedAt: new Date().toISOString() };
+    saveToStorage(STORAGE_KEYS.ORDERS, orders);
+  }
+};
+
 export const webDeleteOrder = (id: string): void => {
   const orders = getFromStorage<InspectionOrder>(STORAGE_KEYS.ORDERS);
   const filtered = orders.filter(o => o.id !== id);
