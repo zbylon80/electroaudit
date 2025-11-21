@@ -16,6 +16,8 @@ import { webGetOrder, webGetClient, webDeleteOrder, webGetRoomsByOrder, webDelet
 import { EmptyState } from '../components/lists/EmptyState';
 import { Button } from '../components/common/Button';
 import { Picker, PickerItem } from '../components/common/Picker';
+import { FormField } from '../components/forms/FormField';
+import { Switch } from '../components/common/Switch';
 
 type OrderDetailsScreenRouteProp = RouteProp<RootStackParamList, 'OrderDetailsScreen'>;
 type OrderDetailsScreenNavigationProp = StackNavigationProp<RootStackParamList, 'OrderDetailsScreen'>;
@@ -623,12 +625,174 @@ const PointsTab: React.FC = () => {
 };
 
 const VisualTab: React.FC = () => {
-  const { order } = useOrderContext();
+  const { order, refreshOrder } = useOrderContext();
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [summary, setSummary] = useState('');
+  const [defectsFound, setDefectsFound] = useState('');
+  const [recommendations, setRecommendations] = useState('');
+  const [visualResultPass, setVisualResultPass] = useState<boolean | undefined>(undefined);
+  const [lastSaved, setLastSaved] = useState<string | null>(null);
+  const isWeb = Platform.OS === 'web';
+
+  // Load existing visual inspection data
+  const loadVisualInspection = async () => {
+    try {
+      setLoading(true);
+      let visualInspectionData = null;
+
+      if (isWeb) {
+        initWebStorage();
+        const { webGetVisualInspectionByOrder } = require('../services/webStorage');
+        visualInspectionData = webGetVisualInspectionByOrder(order.id);
+      } else {
+        const { getVisualInspectionByOrder } = require('../services/visualInspection');
+        visualInspectionData = await getVisualInspectionByOrder(order.id);
+      }
+
+      if (visualInspectionData) {
+        setSummary(visualInspectionData.summary || '');
+        setDefectsFound(visualInspectionData.defectsFound || '');
+        setRecommendations(visualInspectionData.recommendations || '');
+        setVisualResultPass(visualInspectionData.visualResultPass);
+        setLastSaved(visualInspectionData.updatedAt);
+      }
+    } catch (error) {
+      console.error('Error loading visual inspection:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useFocusEffect(
+    useCallback(() => {
+      loadVisualInspection();
+    }, [order.id])
+  );
+
+  const handleSave = async () => {
+    try {
+      setSaving(true);
+
+      const visualInspectionData = {
+        inspectionOrderId: order.id,
+        summary,
+        defectsFound: defectsFound || undefined,
+        recommendations: recommendations || undefined,
+        visualResultPass,
+      };
+
+      if (isWeb) {
+        initWebStorage();
+        const { webCreateOrUpdateVisualInspection } = require('../services/webStorage');
+        const { generateUUID } = require('../utils');
+        
+        const now = new Date().toISOString();
+        const existing = require('../services/webStorage').webGetVisualInspectionByOrder(order.id);
+        
+        const visualInspection = {
+          id: existing?.id ?? generateUUID(),
+          ...visualInspectionData,
+          createdAt: existing?.createdAt ?? now,
+          updatedAt: now,
+        };
+        
+        webCreateOrUpdateVisualInspection(visualInspection);
+        setLastSaved(now);
+      } else {
+        const { createOrUpdateVisualInspection } = require('../services/visualInspection');
+        const result = await createOrUpdateVisualInspection(visualInspectionData);
+        setLastSaved(result.updatedAt);
+      }
+
+      if (isWeb) {
+        window.alert('Visual inspection saved successfully');
+      } else {
+        Alert.alert('Success', 'Visual inspection saved successfully');
+      }
+    } catch (error) {
+      console.error('Error saving visual inspection:', error);
+      if (isWeb) {
+        window.alert('Failed to save visual inspection');
+      } else {
+        Alert.alert('Error', 'Failed to save visual inspection');
+      }
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#2196F3" />
+      </View>
+    );
+  }
+
   return (
-    <View style={styles.tabContainer}>
-      <Text style={styles.tabText}>Visual Inspection Tab</Text>
-      <Text style={styles.tabSubtext}>Order ID: {order.id}</Text>
-      <Text style={styles.tabSubtext}>This will be implemented in task 22</Text>
+    <View style={styles.tabContentContainer}>
+      <ScrollView style={styles.scrollView} contentContainerStyle={styles.visualFormContainer}>
+        {/* Saved state indicator */}
+        {lastSaved && (
+          <View style={styles.savedIndicator}>
+            <Text style={styles.savedText}>
+              Last saved: {new Date(lastSaved).toLocaleString()}
+            </Text>
+          </View>
+        )}
+
+        {/* Summary field */}
+        <FormField
+          label="Summary"
+          value={summary}
+          onChangeText={setSummary}
+          placeholder="Enter visual inspection summary"
+          multiline
+          numberOfLines={4}
+          required
+        />
+
+        {/* Defects Found field */}
+        <FormField
+          label="Defects Found"
+          value={defectsFound}
+          onChangeText={setDefectsFound}
+          placeholder="Describe any defects found (optional)"
+          multiline
+          numberOfLines={4}
+        />
+
+        {/* Recommendations field */}
+        <FormField
+          label="Recommendations"
+          value={recommendations}
+          onChangeText={setRecommendations}
+          placeholder="Enter recommendations (optional)"
+          multiline
+          numberOfLines={4}
+        />
+
+        {/* Visual Result Pass switch */}
+        <View style={styles.switchContainer}>
+          <Switch
+            label="Visual Inspection Pass"
+            value={visualResultPass ?? false}
+            onValueChange={setVisualResultPass}
+          />
+        </View>
+
+        {/* Save button */}
+        <Button
+          mode="contained"
+          onPress={handleSave}
+          disabled={saving || !summary.trim()}
+          loading={saving}
+          style={styles.saveButton}
+        >
+          Save Visual Inspection
+        </Button>
+      </ScrollView>
     </View>
   );
 };
@@ -696,6 +860,10 @@ export const OrderDetailsScreen: React.FC = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleEdit = () => {
+    navigation.navigate('OrderFormScreen', { orderId });
   };
 
   const handleDelete = () => {
@@ -792,12 +960,20 @@ export const OrderDetailsScreen: React.FC = () => {
                 <Text style={styles.clientName}>{client?.name || 'Unknown Client'}</Text>
                 <Text style={styles.objectName}>{order.objectName}</Text>
               </View>
-              <IconButton
-                icon="delete"
-                iconColor="#d32f2f"
-                size={24}
-                onPress={handleDelete}
-              />
+              <View style={styles.headerActions}>
+                <IconButton
+                  icon="pencil"
+                  iconColor="#2196F3"
+                  size={24}
+                  onPress={handleEdit}
+                />
+                <IconButton
+                  icon="delete"
+                  iconColor="#d32f2f"
+                  size={24}
+                  onPress={handleDelete}
+                />
+              </View>
             </View>
             <View style={styles.statusContainer}>
               <View
@@ -913,6 +1089,10 @@ const styles = StyleSheet.create({
   },
   headerInfo: {
     flex: 1,
+  },
+  headerActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   clientName: {
     fontSize: 18,
@@ -1119,5 +1299,32 @@ const styles = StyleSheet.create({
     color: '#2196F3',
     marginTop: 4,
     fontStyle: 'italic',
+  },
+  visualFormContainer: {
+    padding: 16,
+  },
+  savedIndicator: {
+    backgroundColor: '#E8F5E9',
+    padding: 12,
+    borderRadius: 8,
+    marginBottom: 16,
+    borderLeftWidth: 4,
+    borderLeftColor: '#66BB6A',
+  },
+  savedText: {
+    fontSize: 14,
+    color: '#2E7D32',
+    fontWeight: '500',
+  },
+  switchContainer: {
+    marginVertical: 16,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    backgroundColor: '#f5f5f5',
+    borderRadius: 8,
+  },
+  saveButton: {
+    marginTop: 24,
+    marginBottom: 32,
   },
 });

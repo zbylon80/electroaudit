@@ -280,6 +280,20 @@ export const webCreateResult = (result: MeasurementResult): void => {
   saveToStorage(STORAGE_KEYS.RESULTS, filtered);
 };
 
+// Visual Inspection operations
+export const webGetVisualInspectionByOrder = (orderId: string): any | null => {
+  const visualInspections = getFromStorage<any>(STORAGE_KEYS.VISUAL_INSPECTIONS);
+  return visualInspections.find(vi => vi.inspectionOrderId === orderId) || null;
+};
+
+export const webCreateOrUpdateVisualInspection = (visualInspection: any): void => {
+  const visualInspections = getFromStorage<any>(STORAGE_KEYS.VISUAL_INSPECTIONS);
+  // Remove existing visual inspection for this order if any (UPSERT behavior)
+  const filtered = visualInspections.filter(vi => vi.inspectionOrderId !== visualInspection.inspectionOrderId);
+  filtered.push(visualInspection);
+  saveToStorage(STORAGE_KEYS.VISUAL_INSPECTIONS, filtered);
+};
+
 // Clear all data (useful for testing)
 export const clearWebStorage = (): void => {
   Object.values(STORAGE_KEYS).forEach(key => {
