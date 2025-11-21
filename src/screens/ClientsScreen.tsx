@@ -232,7 +232,7 @@ export const ClientsScreen: React.FC = () => {
             }
             actionLabel={searchQuery ? undefined : t.screens.clients.addClient}
             onAction={searchQuery ? undefined : handleAddClient}
-            icon={searchQuery ? 'magnify' : 'account-off'}
+            icon={searchQuery ? 'magnify' : 'account-plus'}
           />
         </View>
       ) : (
