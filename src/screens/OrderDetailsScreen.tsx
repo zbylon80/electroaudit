@@ -5,14 +5,16 @@ import { StackNavigationProp } from '@react-navigation/stack';
 import { createMaterialTopTabNavigator } from '@react-navigation/material-top-tabs';
 import { IconButton, FAB, Dialog, Portal, Paragraph } from 'react-native-paper';
 import { RootStackParamList } from '../navigation/types';
-import { InspectionOrder, Client, Room } from '../types';
+import { InspectionOrder, Client, Room, MeasurementPoint, PointType, PointStatus } from '../types';
 import { getOrder, deleteOrder } from '../services/order';
 import { getClient } from '../services/client';
 import { getRoomsByOrder, deleteRoom, createRoom } from '../services/room';
+import { getPointsByOrder, getPointStatus } from '../services/point';
 import { generateUUID } from '../utils';
-import { webGetOrder, webGetClient, webDeleteOrder, webGetRoomsByOrder, webDeleteRoom, webCreateRoom, initWebStorage } from '../services/webStorage';
+import { webGetOrder, webGetClient, webDeleteOrder, webGetRoomsByOrder, webDeleteRoom, webCreateRoom, webGetPointsByOrder, webGetPointStatus, initWebStorage } from '../services/webStorage';
 import { EmptyState } from '../components/lists/EmptyState';
 import { Button } from '../components/common/Button';
+import { Picker, PickerItem } from '../components/common/Picker';
 
 type OrderDetailsScreenRouteProp = RouteProp<RootStackParamList, 'OrderDetailsScreen'>;
 type OrderDetailsScreenNavigationProp = StackNavigationProp<RootStackParamList, 'OrderDetailsScreen'>;
@@ -271,12 +273,246 @@ const RoomsTab: React.FC = () => {
 };
 
 const PointsTab: React.FC = () => {
-  const { order } = useOrderContext();
+  const { order, refreshOrder } = useOrderContext();
+  const navigation = useNavigation<OrderDetailsScreenNavigationProp>();
+  const [points, setPoints] = useState<MeasurementPoint[]>([]);
+  const [rooms, setRooms] = useState<Room[]>([]);
+  const [selectedRoomId, setSelectedRoomId] = useState<string>('all');
+  const [loading, setLoading] = useState(true);
+  const [pointStatuses, setPointStatuses] = useState<Record<string, PointStatus>>({});
+  const isWeb = Platform.OS === 'web';
+
+  const loadData = async () => {
+    try {
+      setLoading(true);
+      let pointsData: MeasurementPoint[] = [];
+      let roomsData: Room[] = [];
+      
+      if (isWeb) {
+        initWebStorage();
+        pointsData = webGetPointsByOrder(order.id);
+        roomsData = webGetRoomsByOrder(order.id);
+      } else {
+        pointsData = await getPointsByOrder(order.id);
+        roomsData = await getRoomsByOrder(order.id);
+      }
+      
+      setPoints(pointsData);
+      setRooms(roomsData);
+      
+      // Load status for each point
+      const statuses: Record<string, PointStatus> = {};
+      for (const point of pointsData) {
+        if (isWeb) {
+          statuses[point.id] = webGetPointStatus(point.id);
+        } else {
+          statuses[point.id] = await getPointStatus(point.id);
+        }
+      }
+      setPointStatuses(statuses);
+    } catch (error) {
+      console.error('Error loading points:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Use useFocusEffect to reload points when returning from PointFormScreen or MeasurementFormScreen
+  useFocusEffect(
+    useCallback(() => {
+      loadData();
+    }, [order.id])
+  );
+
+  const handleAddPoint = () => {
+    navigation.navigate('PointFormScreen', { orderId: order.id });
+  };
+
+  const handlePointPress = (pointId: string) => {
+    navigation.navigate('MeasurementFormScreen', { orderId: order.id, pointId });
+  };
+
+  const getStatusColor = (status: PointStatus): string => {
+    switch (status) {
+      case PointStatus.UNMEASURED:
+        return '#999';
+      case PointStatus.OK:
+        return '#66BB6A';
+      case PointStatus.NOT_OK:
+        return '#EF5350';
+      default:
+        return '#999';
+    }
+  };
+
+  const getStatusLabel = (status: PointStatus): string => {
+    switch (status) {
+      case PointStatus.UNMEASURED:
+        return 'Unmeasured';
+      case PointStatus.OK:
+        return 'OK';
+      case PointStatus.NOT_OK:
+        return 'NOT OK';
+      default:
+        return 'Unknown';
+    }
+  };
+
+  const getTypeIcon = (type: PointType): string => {
+    switch (type) {
+      case PointType.SOCKET:
+        return 'power-socket';
+      case PointType.LIGHTING:
+        return 'lightbulb';
+      case PointType.RCD:
+        return 'electric-switch';
+      case PointType.EARTHING:
+        return 'earth';
+      case PointType.LPS:
+        return 'lightning-bolt';
+      case PointType.OTHER:
+        return 'dots-horizontal';
+      default:
+        return 'help-circle';
+    }
+  };
+
+  const getTypeLabel = (type: PointType): string => {
+    switch (type) {
+      case PointType.SOCKET:
+        return 'Socket';
+      case PointType.LIGHTING:
+        return 'Lighting';
+      case PointType.RCD:
+        return 'RCD';
+      case PointType.EARTHING:
+        return 'Earthing';
+      case PointType.LPS:
+        return 'LPS';
+      case PointType.OTHER:
+        return 'Other';
+      default:
+        return type;
+    }
+  };
+
+  // Filter points based on selected room
+  const filteredPoints = selectedRoomId === 'all' 
+    ? points 
+    : selectedRoomId === 'unassigned'
+    ? points.filter(p => !p.roomId)
+    : points.filter(p => p.roomId === selectedRoomId);
+
+  // Group points by room for display
+  const unassignedPoints = points.filter(p => !p.roomId);
+
+  const renderPointItem = ({ item }: { item: MeasurementPoint }) => {
+    const status = pointStatuses[item.id] || PointStatus.UNMEASURED;
+    const room = item.roomId ? rooms.find(r => r.id === item.roomId) : null;
+    
+    return (
+      <View style={styles.pointItem} onTouchEnd={() => handlePointPress(item.id)}>
+        <View style={styles.pointIconContainer}>
+          <IconButton
+            icon={getTypeIcon(item.type)}
+            size={24}
+            iconColor="#2196F3"
+          />
+        </View>
+        <View style={styles.pointInfo}>
+          <Text style={styles.pointLabel}>{item.label}</Text>
+          <View style={styles.pointDetails}>
+            <Text style={styles.pointType}>{getTypeLabel(item.type)}</Text>
+            {item.circuitSymbol && (
+              <>
+                <Text style={styles.pointSeparator}>•</Text>
+                <Text style={styles.pointCircuit}>{item.circuitSymbol}</Text>
+              </>
+            )}
+            {room && (
+              <>
+                <Text style={styles.pointSeparator}>•</Text>
+                <Text style={styles.pointRoom}>{room.name}</Text>
+              </>
+            )}
+            {!room && item.roomId === undefined && (
+              <>
+                <Text style={styles.pointSeparator}>•</Text>
+                <Text style={styles.pointRoomUnassigned}>Unassigned</Text>
+              </>
+            )}
+          </View>
+        </View>
+        <View style={[styles.statusIndicator, { backgroundColor: getStatusColor(status) }]}>
+          <Text style={styles.pointStatusText}>{getStatusLabel(status)}</Text>
+        </View>
+      </View>
+    );
+  };
+
+  if (loading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#2196F3" />
+      </View>
+    );
+  }
+
+  // Prepare room picker items
+  const roomPickerItems: PickerItem[] = [
+    { label: 'All Rooms', value: 'all' },
+    ...rooms.map(room => ({ label: room.name, value: room.id })),
+  ];
+  
+  // Add unassigned option if there are unassigned points
+  if (unassignedPoints.length > 0) {
+    roomPickerItems.push({ label: 'Unassigned', value: 'unassigned' });
+  }
+
   return (
-    <View style={styles.tabContainer}>
-      <Text style={styles.tabText}>Points Tab</Text>
-      <Text style={styles.tabSubtext}>Order ID: {order.id}</Text>
-      <Text style={styles.tabSubtext}>This will be implemented in task 19</Text>
+    <View style={styles.tabContentContainer}>
+      {/* Room selector */}
+      <View style={styles.roomSelectorContainer}>
+        <Picker
+          label="Filter by Room"
+          value={selectedRoomId}
+          items={roomPickerItems}
+          onValueChange={setSelectedRoomId}
+          style={styles.roomPicker}
+        />
+      </View>
+
+      {/* Points list */}
+      {points.length === 0 ? (
+        <EmptyState
+          title="No measurement points yet"
+          message="Add measurement points to record electrical test results"
+          actionLabel="Add Point"
+          onAction={handleAddPoint}
+          icon="plus"
+        />
+      ) : filteredPoints.length === 0 ? (
+        <View style={styles.emptyFilterContainer}>
+          <Text style={styles.emptyFilterText}>No points in this room</Text>
+        </View>
+      ) : (
+        <FlatList
+          data={filteredPoints}
+          renderItem={renderPointItem}
+          keyExtractor={(item) => item.id}
+          style={styles.pointsList}
+        />
+      )}
+
+      {/* Floating action button - only show when there are points */}
+      {points.length > 0 && (
+        <FAB
+          icon="plus"
+          label="Add Point"
+          style={styles.fab}
+          onPress={handleAddPoint}
+        />
+      )}
     </View>
   );
 };
@@ -680,5 +916,87 @@ const styles = StyleSheet.create({
     right: 16,
     bottom: 80,
     backgroundColor: '#2196F3',
+  },
+  roomSelectorContainer: {
+    padding: 16,
+    backgroundColor: '#f5f5f5',
+    borderBottomWidth: 1,
+    borderBottomColor: '#e0e0e0',
+  },
+  roomPicker: {
+    marginVertical: 0,
+  },
+  pointsList: {
+    flex: 1,
+  },
+  pointItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#e0e0e0',
+    backgroundColor: '#fff',
+  },
+  pointIconContainer: {
+    marginRight: 8,
+  },
+  pointInfo: {
+    flex: 1,
+  },
+  pointLabel: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#333',
+    marginBottom: 4,
+  },
+  pointDetails: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  pointType: {
+    fontSize: 14,
+    color: '#666',
+  },
+  pointSeparator: {
+    fontSize: 14,
+    color: '#999',
+    marginHorizontal: 6,
+  },
+  pointCircuit: {
+    fontSize: 14,
+    color: '#666',
+    fontStyle: 'italic',
+  },
+  pointRoom: {
+    fontSize: 14,
+    color: '#2196F3',
+    fontWeight: '500',
+  },
+  pointRoomUnassigned: {
+    fontSize: 14,
+    color: '#999',
+    fontStyle: 'italic',
+  },
+  statusIndicator: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 12,
+    marginLeft: 8,
+  },
+  pointStatusText: {
+    color: '#fff',
+    fontSize: 11,
+    fontWeight: 'bold',
+  },
+  emptyFilterContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  emptyFilterText: {
+    fontSize: 16,
+    color: '#666',
+    textAlign: 'center',
   },
 });

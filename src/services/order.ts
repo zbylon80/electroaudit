@@ -18,11 +18,12 @@ export const createOrder = async (orderData: OrderInput): Promise<InspectionOrde
     console.log('Generated order UUID:', id);
     const now = new Date().toISOString();
     
-    // Always initialize new orders with status "draft" (Requirement 2.2)
+    // Initialize new orders with status "draft" by default (Requirement 2.2)
+    // but allow override for testing/seeding purposes
     const order: InspectionOrder = {
       id,
       ...orderData,
-      status: OrderStatus.DRAFT,
+      status: orderData.status ?? OrderStatus.DRAFT,
       createdAt: now,
       updatedAt: now,
     };

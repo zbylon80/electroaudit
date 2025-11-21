@@ -14,9 +14,13 @@ import {
   webGetClient, 
   webCreateClient, 
   webCreateOrder,
+  webCreateRoom,
+  webCreatePoint,
+  webCreateResult,
   initWebStorage 
 } from '../services/webStorage';
-import { OrderStatus as OrderStatusEnum } from '../types';
+import { OrderStatus as OrderStatusEnum, PointType } from '../types';
+import { generateUUID } from '../utils';
 
 type OrdersScreenNavigationProp = StackNavigationProp<RootStackParamList, 'OrdersScreen'>;
 
@@ -227,8 +231,352 @@ export const OrdersScreen: React.FC = () => {
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
         });
+
+        // Create rooms for order 1
+        webCreateRoom({
+          id: 'web-room-1',
+          inspectionOrderId: 'web-order-1',
+          name: 'Biuro 101',
+          notes: 'Pokój konferencyjny',
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        });
+
+        webCreateRoom({
+          id: 'web-room-2',
+          inspectionOrderId: 'web-order-1',
+          name: 'Biuro 102',
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        });
+
+        webCreateRoom({
+          id: 'web-room-3',
+          inspectionOrderId: 'web-order-1',
+          name: 'Kuchnia',
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        });
+
+        // Create points for order 1
+        webCreatePoint({
+          id: 'web-point-1',
+          inspectionOrderId: 'web-order-1',
+          roomId: 'web-room-1',
+          label: 'Gniazdo 1',
+          type: PointType.SOCKET,
+          circuitSymbol: 'L1.1',
+          notes: 'Gniazdo przy biurku',
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        });
+
+        webCreatePoint({
+          id: 'web-point-2',
+          inspectionOrderId: 'web-order-1',
+          roomId: 'web-room-1',
+          label: 'Gniazdo 2',
+          type: PointType.SOCKET,
+          circuitSymbol: 'L1.2',
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        });
+
+        webCreatePoint({
+          id: 'web-point-3',
+          inspectionOrderId: 'web-order-1',
+          roomId: 'web-room-1',
+          label: 'Oświetlenie główne',
+          type: PointType.LIGHTING,
+          circuitSymbol: 'L2.1',
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        });
+
+        webCreatePoint({
+          id: 'web-point-4',
+          inspectionOrderId: 'web-order-1',
+          roomId: 'web-room-2',
+          label: 'Gniazdo 1',
+          type: PointType.SOCKET,
+          circuitSymbol: 'L1.3',
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        });
+
+        webCreatePoint({
+          id: 'web-point-5',
+          inspectionOrderId: 'web-order-1',
+          roomId: 'web-room-2',
+          label: 'Oświetlenie',
+          type: PointType.LIGHTING,
+          circuitSymbol: 'L2.2',
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        });
+
+        webCreatePoint({
+          id: 'web-point-6',
+          inspectionOrderId: 'web-order-1',
+          roomId: 'web-room-3',
+          label: 'Gniazdo kuchenne',
+          type: PointType.SOCKET,
+          circuitSymbol: 'L1.4',
+          notes: 'Gniazdo przy blacie',
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        });
+
+        webCreatePoint({
+          id: 'web-point-7',
+          inspectionOrderId: 'web-order-1',
+          roomId: 'web-room-3',
+          label: 'RCD kuchnia',
+          type: PointType.RCD,
+          circuitSymbol: 'RCD1',
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        });
+
+        // Unassigned point
+        webCreatePoint({
+          id: 'web-point-8',
+          inspectionOrderId: 'web-order-1',
+          label: 'Uziemienie główne',
+          type: PointType.EARTHING,
+          circuitSymbol: 'PE',
+          notes: 'Szyna uziemiająca w rozdzielnicy głównej',
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        });
+
+        // Create rooms for order 2
+        webCreateRoom({
+          id: 'web-room-4',
+          inspectionOrderId: 'web-order-2',
+          name: 'Hala A',
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        });
+
+        webCreateRoom({
+          id: 'web-room-5',
+          inspectionOrderId: 'web-order-2',
+          name: 'Hala B',
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        });
+
+        // Create points for order 2
+        webCreatePoint({
+          id: 'web-point-9',
+          inspectionOrderId: 'web-order-2',
+          roomId: 'web-room-4',
+          label: 'Gniazdo siłowe 1',
+          type: PointType.SOCKET,
+          circuitSymbol: 'L3.1',
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        });
+
+        webCreatePoint({
+          id: 'web-point-10',
+          inspectionOrderId: 'web-order-2',
+          roomId: 'web-room-4',
+          label: 'Oświetlenie halowe',
+          type: PointType.LIGHTING,
+          circuitSymbol: 'L4.1',
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        });
+
+        webCreatePoint({
+          id: 'web-point-11',
+          inspectionOrderId: 'web-order-2',
+          roomId: 'web-room-5',
+          label: 'Gniazdo siłowe 2',
+          type: PointType.SOCKET,
+          circuitSymbol: 'L3.2',
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        });
+
+        webCreatePoint({
+          id: 'web-point-12',
+          inspectionOrderId: 'web-order-2',
+          label: 'LPS - odgromienie',
+          type: PointType.LPS,
+          circuitSymbol: 'LPS1',
+          notes: 'System odgromowy na dachu',
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        });
+
+        // Create rooms, points and results for order 3 (DONE status)
+        webCreateRoom({
+          id: 'web-room-6',
+          inspectionOrderId: 'web-order-3',
+          name: 'Serwerownia A',
+          notes: 'Główna serwerownia',
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        });
+
+        webCreateRoom({
+          id: 'web-room-7',
+          inspectionOrderId: 'web-order-3',
+          name: 'Serwerownia B',
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        });
+
+        webCreateRoom({
+          id: 'web-room-8',
+          inspectionOrderId: 'web-order-3',
+          name: 'UPS Room',
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        });
+
+        // Points with results for order 3
+        webCreatePoint({
+          id: 'web-point-13',
+          inspectionOrderId: 'web-order-3',
+          roomId: 'web-room-6',
+          label: 'Gniazdo rack 1',
+          type: PointType.SOCKET,
+          circuitSymbol: 'L5.1',
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        });
+
+        webCreateResult({
+          id: generateUUID(),
+          measurementPointId: 'web-point-13',
+          loopImpedance: 0.15,
+          loopResultPass: true,
+          insulationLn: 450.0,
+          insulationLpe: 480.0,
+          insulationNpe: 470.0,
+          insulationResultPass: true,
+          peResistance: 0.08,
+          peResultPass: true,
+          polarityOk: true,
+          phaseSequenceOk: true,
+          breakerCheckOk: true,
+          comments: 'Wszystkie pomiary w normie',
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        });
+
+        webCreatePoint({
+          id: 'web-point-14',
+          inspectionOrderId: 'web-order-3',
+          roomId: 'web-room-6',
+          label: 'RCD Serwerownia A',
+          type: PointType.RCD,
+          circuitSymbol: 'RCD2',
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        });
+
+        webCreateResult({
+          id: generateUUID(),
+          measurementPointId: 'web-point-14',
+          rcdType: 'A',
+          rcdRatedCurrent: 30,
+          rcdTime1x: 18,
+          rcdTime5x: 12,
+          rcdResultPass: true,
+          comments: 'RCD działa prawidłowo',
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        });
+
+        webCreatePoint({
+          id: 'web-point-15',
+          inspectionOrderId: 'web-order-3',
+          roomId: 'web-room-7',
+          label: 'Gniazdo rack 3',
+          type: PointType.SOCKET,
+          circuitSymbol: 'L5.3',
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        });
+
+        webCreateResult({
+          id: generateUUID(),
+          measurementPointId: 'web-point-15',
+          loopImpedance: 0.22,
+          loopResultPass: false, // Failed measurement - will show as NOT OK
+          insulationLn: 380.0,
+          insulationLpe: 390.0,
+          insulationNpe: 385.0,
+          insulationResultPass: true,
+          peResistance: 0.12,
+          peResultPass: true,
+          polarityOk: true,
+          phaseSequenceOk: true,
+          breakerCheckOk: true,
+          comments: 'Impedancja pętli zwarcia powyżej normy - wymaga naprawy',
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        });
+
+        webCreatePoint({
+          id: 'web-point-16',
+          inspectionOrderId: 'web-order-3',
+          roomId: 'web-room-8',
+          label: 'Zasilanie UPS 1',
+          type: PointType.SOCKET,
+          circuitSymbol: 'L7.1',
+          notes: 'Główny UPS 100kVA',
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        });
+
+        webCreateResult({
+          id: generateUUID(),
+          measurementPointId: 'web-point-16',
+          loopImpedance: 0.11,
+          loopResultPass: true,
+          insulationLn: 520.0,
+          insulationLpe: 530.0,
+          insulationNpe: 525.0,
+          insulationResultPass: true,
+          peResistance: 0.06,
+          peResultPass: true,
+          polarityOk: true,
+          phaseSequenceOk: true,
+          breakerCheckOk: true,
+          comments: 'Doskonałe parametry',
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        });
+
+        // Unassigned points with results
+        webCreatePoint({
+          id: 'web-point-17',
+          inspectionOrderId: 'web-order-3',
+          label: 'Uziemienie główne DC',
+          type: PointType.EARTHING,
+          circuitSymbol: 'PE-DC',
+          notes: 'Główna szyna uziemiająca centrum danych',
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        });
+
+        webCreateResult({
+          id: generateUUID(),
+          measurementPointId: 'web-point-17',
+          earthingResistance: 2.5,
+          earthingResultPass: true,
+          comments: 'Rezystancja uziemienia w normie',
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        });
         
-        console.log('✅ Web storage seeded successfully!');
+        console.log('✅ Web storage seeded successfully with rooms, points and measurement results!');
       } else {
         await seedDatabase();
       }
@@ -470,5 +818,6 @@ const styles = StyleSheet.create({
   seedButton: {
     marginHorizontal: 32,
     marginTop: 16,
+    marginBottom: 80,
   },
 });

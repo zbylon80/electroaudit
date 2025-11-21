@@ -3,7 +3,7 @@
  * This provides the same interface as SQLite services but uses localStorage
  */
 
-import { Client, InspectionOrder, Room } from '../types';
+import { Client, InspectionOrder, Room, MeasurementPoint, MeasurementResult, PointStatus } from '../types';
 
 const STORAGE_KEYS = {
   CLIENTS: 'electroaudit_clients',
@@ -161,6 +161,64 @@ export const webDeleteRoom = (id: string): void => {
     p.roomId === id ? { ...p, roomId: null } : p
   );
   saveToStorage(STORAGE_KEYS.POINTS, updatedPoints);
+};
+
+// Point operations
+export const webGetPointsByOrder = (orderId: string): MeasurementPoint[] => {
+  const points = getFromStorage<MeasurementPoint>(STORAGE_KEYS.POINTS);
+  return points
+    .filter(p => p.inspectionOrderId === orderId)
+    .sort((a, b) => a.label.localeCompare(b.label));
+};
+
+export const webGetPointsByRoom = (roomId: string): MeasurementPoint[] => {
+  const points = getFromStorage<MeasurementPoint>(STORAGE_KEYS.POINTS);
+  return points
+    .filter(p => p.roomId === roomId)
+    .sort((a, b) => a.label.localeCompare(b.label));
+};
+
+export const webCreatePoint = (point: MeasurementPoint): void => {
+  const points = getFromStorage<MeasurementPoint>(STORAGE_KEYS.POINTS);
+  points.push(point);
+  saveToStorage(STORAGE_KEYS.POINTS, points);
+};
+
+export const webGetPointStatus = (pointId: string): PointStatus => {
+  const results = getFromStorage<any>(STORAGE_KEYS.RESULTS);
+  const result = results.find(r => r.measurementPointId === pointId);
+  
+  if (!result) {
+    return PointStatus.UNMEASURED;
+  }
+  
+  // Check all pass/fail flags
+  const passFlags = [
+    result.loopResultPass,
+    result.insulationResultPass,
+    result.rcdResultPass,
+    result.peResultPass,
+    result.earthingResultPass,
+    result.polarityOk,
+    result.phaseSequenceOk,
+    result.breakerCheckOk,
+    result.lpsContinuityOk,
+    result.lpsVisualOk,
+  ];
+  
+  // Filter out null/undefined values and check if any remaining flag is false
+  const hasFailure = passFlags.some(flag => flag !== null && flag !== undefined && flag === false);
+  
+  return hasFailure ? PointStatus.NOT_OK : PointStatus.OK;
+};
+
+// Result operations
+export const webCreateResult = (result: MeasurementResult): void => {
+  const results = getFromStorage<MeasurementResult>(STORAGE_KEYS.RESULTS);
+  // Remove existing result for this point if any (UPSERT behavior)
+  const filtered = results.filter(r => r.measurementPointId !== result.measurementPointId);
+  filtered.push(result);
+  saveToStorage(STORAGE_KEYS.RESULTS, filtered);
 };
 
 // Clear all data (useful for testing)
