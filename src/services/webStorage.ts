@@ -59,6 +59,14 @@ export const webUpdateClient = (id: string, updatedClient: Partial<Client>): voi
 };
 
 export const webDeleteClient = (id: string): void => {
+  // Check if client has associated orders (Requirement 1.10)
+  const orders = getFromStorage<InspectionOrder>(STORAGE_KEYS.ORDERS);
+  const hasOrders = orders.some(order => order.clientId === id);
+  
+  if (hasOrders) {
+    throw new Error('Cannot delete client with associated inspection orders');
+  }
+  
   const clients = getFromStorage<Client>(STORAGE_KEYS.CLIENTS);
   const filtered = clients.filter(c => c.id !== id);
   saveToStorage(STORAGE_KEYS.CLIENTS, filtered);

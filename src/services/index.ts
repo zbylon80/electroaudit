@@ -21,3 +21,6 @@ export * from './visualInspection';
 
 // Protocol services
 export * from './protocol';
+
+// Protocol Export services
+export * from './protocolExport';

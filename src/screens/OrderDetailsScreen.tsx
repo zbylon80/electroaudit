@@ -803,6 +803,8 @@ const ProtocolTab: React.FC = () => {
   const [protocolData, setProtocolData] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
   const [exporting, setExporting] = useState(false);
+  const [inspectorName, setInspectorName] = useState('Inspector Name');
+  const [signatureDate, setSignatureDate] = useState(new Date().toISOString().split('T')[0]);
   const isWeb = Platform.OS === 'web';
 
   const loadProtocolData = async () => {
@@ -822,6 +824,11 @@ const ProtocolTab: React.FC = () => {
       }
       
       setProtocolData(data);
+      
+      // Set inspector name from protocol data or default
+      if (data) {
+        setInspectorName(data.inspector.name || 'Inspector Name');
+      }
     } catch (err) {
       console.error('Error loading protocol data:', err);
       setError('Failed to load protocol data');
@@ -830,28 +837,67 @@ const ProtocolTab: React.FC = () => {
     }
   };
 
-  const handleExport = async () => {
+  const handlePrint = async () => {
+    if (!protocolData) {
+      Alert.alert('Error', 'Protocol data not available');
+      return;
+    }
+
     try {
       setExporting(true);
       
-      if (isWeb) {
-        // On web, use window.print()
-        window.print();
-      } else {
-        // On mobile, show alert that PDF export will be implemented in next task
-        Alert.alert(
-          'Export Protocol',
-          'PDF export functionality will be available in the next update. For now, you can take screenshots of the protocol.',
-          [{ text: 'OK' }]
-        );
-      }
+      // Update protocol data with editable fields
+      const updatedProtocolData = {
+        ...protocolData,
+        inspector: {
+          ...protocolData.inspector,
+          name: inspectorName,
+        },
+        signature: {
+          ...protocolData.signature,
+          date: signatureDate,
+        },
+      };
+      
+      // Import the print service dynamically
+      const { printProtocol } = require('../services/protocolExport');
+      await printProtocol(updatedProtocolData);
+    } catch (err) {
+      console.error('Error printing protocol:', err);
+      Alert.alert('Error', 'Failed to print protocol. Please try again.');
+    } finally {
+      setExporting(false);
+    }
+  };
+
+  const handleExportPDF = async () => {
+    if (!protocolData) {
+      Alert.alert('Error', 'Protocol data not available');
+      return;
+    }
+
+    try {
+      setExporting(true);
+      
+      // Update protocol data with editable fields
+      const updatedProtocolData = {
+        ...protocolData,
+        inspector: {
+          ...protocolData.inspector,
+          name: inspectorName,
+        },
+        signature: {
+          ...protocolData.signature,
+          date: signatureDate,
+        },
+      };
+      
+      // Import the export service dynamically
+      const { exportProtocolPDF } = require('../services/protocolExport');
+      await exportProtocolPDF(updatedProtocolData);
     } catch (err) {
       console.error('Error exporting protocol:', err);
-      if (isWeb) {
-        window.alert('Failed to export protocol');
-      } else {
-        Alert.alert('Error', 'Failed to export protocol');
-      }
+      // Error handling is done in the exportProtocol function
     } finally {
       setExporting(false);
     }
@@ -965,7 +1011,12 @@ const ProtocolTab: React.FC = () => {
           {/* Inspector Info */}
           <View style={styles.protocolSection}>
             <Text style={styles.sectionTitle}>Inspector Information</Text>
-            <Text style={styles.protocolText}>Name: {protocolData.inspector.name}</Text>
+            <FormField
+              label="Inspector Name"
+              value={inspectorName}
+              onChangeText={setInspectorName}
+              placeholder="Enter inspector name"
+            />
             {protocolData.inspector.licenseNumber && (
               <Text style={styles.protocolText}>License Number: {protocolData.inspector.licenseNumber}</Text>
             )}
@@ -995,11 +1046,7 @@ const ProtocolTab: React.FC = () => {
             <Text style={styles.sectionTitle}>Inspected Object</Text>
             <Text style={styles.protocolText}>Object Name: {protocolData.object.name}</Text>
             <Text style={styles.protocolText}>Address: {protocolData.object.address}</Text>
-            {protocolData.object.scheduledDate && (
-              <Text style={styles.protocolText}>
-                Inspection Date: {new Date(protocolData.object.scheduledDate).toLocaleDateString()}
-              </Text>
-            )}
+            <Text style={styles.protocolText}>Inspection Date: {protocolData.object.scheduledDate}</Text>
           </View>
 
           {/* Measurement Scope */}
@@ -1165,10 +1212,12 @@ const ProtocolTab: React.FC = () => {
           <View style={styles.protocolSection}>
             <Text style={styles.sectionTitle}>Signature</Text>
             <View style={styles.signatureContainer}>
-              <View style={styles.signatureLine}>
-                <Text style={styles.protocolLabel}>Date:</Text>
-                <View style={styles.signatureUnderline} />
-              </View>
+              <FormField
+                label="Signature Date"
+                value={signatureDate}
+                onChangeText={setSignatureDate}
+                placeholder="YYYY-MM-DD"
+              />
               <View style={styles.signatureLine}>
                 <Text style={styles.protocolLabel}>Inspector Signature:</Text>
                 <View style={styles.signatureUnderline} />
@@ -1176,18 +1225,31 @@ const ProtocolTab: React.FC = () => {
             </View>
           </View>
 
-          {/* Export Button */}
+          {/* Export Buttons */}
           <View style={styles.exportButtonContainer}>
-            <Button
-              mode="contained"
-              onPress={handleExport}
-              disabled={exporting}
-              loading={exporting}
-              icon="printer"
-              style={styles.exportButton}
-            >
-              {isWeb ? 'Print Protocol' : 'Export Protocol'}
-            </Button>
+            {isWeb ? (
+              <Button
+                mode="contained"
+                onPress={handlePrint}
+                disabled={exporting}
+                loading={exporting}
+                icon="printer"
+                style={styles.exportButton}
+              >
+                Print Protocol
+              </Button>
+            ) : (
+              <Button
+                mode="contained"
+                onPress={handleExportPDF}
+                disabled={exporting}
+                loading={exporting}
+                icon="file-pdf-box"
+                style={styles.exportButton}
+              >
+                Export PDF
+              </Button>
+            )}
           </View>
         </View>
       </ScrollView>

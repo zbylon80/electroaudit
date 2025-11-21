@@ -19,6 +19,8 @@
     "@react-navigation/native": "^7.1.20",
     "@react-navigation/stack": "^7.6.4",
     "expo": "~54.0.25",
+    "expo-print": "^15.0.7",
+    "expo-sharing": "^14.0.7",
     "expo-sqlite": "^16.0.9",
     "expo-status-bar": "~3.0.8",
     "react": "19.1.0",
